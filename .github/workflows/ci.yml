@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+#  schedule:
+#    # trigger weekly at 12am
+#    # this build should run with caches disabled
+#    - cron: "0 0 * * 0"
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  security-scan:
+    name: Security Scan of Dependencies
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check Github Permissions
+        id: check-permissions
+        uses: scherermichael-oss/action-has-permission@master
+        with:
+          required-permission: write
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # this action needs write permissions for the given GitHub token
+      - uses: actions-rs/audit-check@v1
+        if: ${{ steps.check-permissions.outputs.has-permission }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.60.0
+          components: rustfmt, clippy
+          override: true
+
+      - name: Check Github Permissions
+        id: check-permissions
+        uses: scherermichael-oss/action-has-permission@master
+        with:
+          required-permission: write
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Cargo Dependencies
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-cargo-dependencies
+        with:
+          # cargo cache files are stored in `~/.cargo` on Linux/macOS
+          # source for paths: https://doc.rust-lang.org/cargo/guide/cargo-home.html#caching-the-cargo-home-in-ci
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target
+          key: benchie-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Check Format
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: -- --check
+
+      - name: Clippy
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-targets -- -D warnings
+          name: Clippy
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked
+
+      - name: Doc
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --locked
+
+      - name: Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --locked
