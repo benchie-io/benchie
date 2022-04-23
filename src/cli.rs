@@ -1,4 +1,4 @@
-use crate::storage::write_to_storage;
+use crate::storage::append_benchmark;
 use clap::Parser;
 use std::process::Command;
 use std::time::Instant;
@@ -35,7 +35,7 @@ pub fn cli() {
         elapsed_time
     );
 
-    let result = write_to_storage(&command_and_flags, &elapsed_time);
+    let result = append_benchmark(&command_and_flags, &elapsed_time);
     match result {
         Ok(_) => {}
         Err(e) => panic!("{}", e),
