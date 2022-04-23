@@ -8,6 +8,14 @@ repository = "https://github.com/benchie-io/benchie"
 homepage = "https://benchie.io"
 license = "MIT"
 
+[lib]
+name = "benchie"
+path = "src/lib.rs"
+
+[[bin]]
+name = "benchie"
+path = "src/main.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
