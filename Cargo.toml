@@ -1,0 +1,13 @@
+[package]
+name = "benchie"
+version = "0.0.2"
+edition = "2021"
+description = "A benchmarking tool"
+documentation = "https://docs.rs/benchie"
+repository = "https://github.com/benchie-io/benchie"
+homepage = "https://benchie.io"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
