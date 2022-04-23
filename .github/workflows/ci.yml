@@ -16,6 +16,7 @@ jobs:
   security-scan:
     name: Security Scan of Dependencies
     runs-on: ubuntu-20.04
+    if: ${{ false }}  # disable for now
     steps:
       - uses: actions/checkout@v3
 
