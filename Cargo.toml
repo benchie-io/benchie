@@ -12,3 +12,8 @@ license = "MIT"
 
 [dependencies]
 clap = { version = "3.1.12", features = ["derive"] }
+
+[dev-dependencies.cargo-husky]
+version = "1"
+default-features = false # Disable features which are enabled by default
+features = ["precommit-hook", "run-cargo-clippy", "run-cargo-fmt"]
