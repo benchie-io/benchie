@@ -43,7 +43,7 @@ fn test_with_missing_dir() {
 fn test_with_existing_dir_but_missing_data() {
     with_temp_dir(|temp_dir| {
         let benchie_dir = temp_dir.path().join(".benchie");
-        let data_file_path = benchie_dir.clone().join("data.json");
+        let data_file_path = benchie_dir.join("data.json");
 
         let _ = create_dir(&benchie_dir);
 
@@ -79,7 +79,7 @@ fn test_with_existing_dir_but_missing_data() {
 fn test_with_existing_dir_and_data() {
     with_temp_dir(|temp_dir| {
         let benchie_dir = temp_dir.path().join(".benchie");
-        let data_file_path = benchie_dir.clone().join("data.json");
+        let data_file_path = benchie_dir.join("data.json");
 
         let _ = create_dir(&benchie_dir);
 
