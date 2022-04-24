@@ -6,7 +6,7 @@ use std::ffi::OsString;
 #[clap(author, version, about, long_about = None)]
 pub struct Args {
     #[clap(long, short)]
-    pub flag: bool,
+    pub show: bool,
 
     #[clap(required = true, multiple_values = true, allow_hyphen_values = true)]
     pub command: Vec<String>,
