@@ -1,7 +1,7 @@
 mod common;
 
 use crate::common::with_temp_dir;
-use benchie::{append_benchmark, load_all_benchmarks, Benchmark, ExecutionResult};
+use benchie::{append_benchmark, load_all_benchmarks, Benchmark, ExecutionResult, GitInfo};
 use serial_test::serial;
 use std::fs;
 use std::fs::create_dir;
@@ -25,10 +25,7 @@ fn test_with_missing_dir() {
             "should not have created a file, while reading"
         );
 
-        let result = append_benchmark(
-            &["sleep".to_string(), "1".to_string()],
-            &create_execution_result(),
-        );
+        let result = append_benchmark(&create_benchmark());
 
         assert!(result.is_ok(), "should not fail with empty dir");
         assert!(
@@ -61,10 +58,7 @@ fn test_with_existing_dir_but_missing_data() {
             "should not have created a file as a result"
         );
 
-        let result = append_benchmark(
-            &["sleep".to_string(), "1".to_string()],
-            &create_execution_result(),
-        );
+        let result = append_benchmark(&create_benchmark());
 
         assert!(result.is_ok(), "should not fail with empty dir");
         assert!(
@@ -103,10 +97,7 @@ fn test_with_existing_dir_and_data() {
             "should be able to load pre saved benchmark"
         );
 
-        let result = append_benchmark(
-            &["sleep".to_string(), "1".to_string()],
-            &create_execution_result(),
-        );
+        let result = append_benchmark(&create_benchmark());
         assert!(result.is_ok(), "should succeed to append a benchmark");
 
         let result = load_all_benchmarks();
@@ -129,5 +120,12 @@ fn create_execution_result() -> ExecutionResult {
 fn create_benchmark() -> Benchmark {
     let result = create_execution_result();
 
-    Benchmark::new(&["ls".to_string(), "-la".to_string()], &result)
+    let info = GitInfo {
+        commit_id: "adfadsfasd".to_string(),
+        commit_message: "hello commit".to_string(),
+        branch: "master".to_string(),
+        is_dirty: false,
+    };
+
+    Benchmark::new(&["ls".to_string(), "-la".to_string()], &result, &Some(info))
 }
