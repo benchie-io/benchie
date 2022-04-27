@@ -35,6 +35,7 @@ dependencies = [
  "chrono",
  "clap",
  "cli-table",
+ "libc",
  "serde",
  "serde_json",
  "serial_test",

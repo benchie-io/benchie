@@ -1,7 +1,7 @@
 mod common;
 
 use crate::common::with_temp_dir;
-use benchie::{append_benchmark, load_all_benchmarks, Benchmark};
+use benchie::{append_benchmark, load_all_benchmarks, Benchmark, ExecutionResult};
 use serial_test::serial;
 use std::fs;
 use std::fs::create_dir;
@@ -27,7 +27,7 @@ fn test_with_missing_dir() {
 
         let result = append_benchmark(
             &["sleep".to_string(), "1".to_string()],
-            &Duration::from_secs(1),
+            &create_execution_result(),
         );
 
         assert!(result.is_ok(), "should not fail with empty dir");
@@ -63,7 +63,7 @@ fn test_with_existing_dir_but_missing_data() {
 
         let result = append_benchmark(
             &["sleep".to_string(), "1".to_string()],
-            &Duration::from_secs(1),
+            &create_execution_result(),
         );
 
         assert!(result.is_ok(), "should not fail with empty dir");
@@ -83,7 +83,7 @@ fn test_with_existing_dir_and_data() {
 
         let _ = create_dir(&benchie_dir);
 
-        let benchmark = Benchmark::new(Duration::from_secs(42), vec![String::from("pwd")]);
+        let benchmark = create_benchmark();
         let data = format!(
             "{{ \"benchmarks\": [{}]}}",
             serde_json::to_string(&benchmark).unwrap()
@@ -105,7 +105,7 @@ fn test_with_existing_dir_and_data() {
 
         let result = append_benchmark(
             &["sleep".to_string(), "1".to_string()],
-            &Duration::from_secs(1),
+            &create_execution_result(),
         );
         assert!(result.is_ok(), "should succeed to append a benchmark");
 
@@ -117,4 +117,17 @@ fn test_with_existing_dir_and_data() {
         );
         assert_eq!(result.unwrap().len(), 2, "should have added a benchmark");
     })
+}
+
+fn create_execution_result() -> ExecutionResult {
+    ExecutionResult {
+        real_time: Duration::from_secs(1),
+        ..Default::default()
+    }
+}
+
+fn create_benchmark() -> Benchmark {
+    let result = create_execution_result();
+
+    Benchmark::new(&result, vec!["ls".to_string(), "-la".to_string()])
 }

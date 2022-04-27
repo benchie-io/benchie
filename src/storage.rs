@@ -1,3 +1,4 @@
+use crate::benchmark::ExecutionResult;
 use anyhow::{Context, Result};
 use chrono::prelude::*;
 use cli_table::Table;
@@ -24,9 +25,9 @@ pub struct Benchmark {
 }
 
 impl Benchmark {
-    pub fn new(runtime: Duration, command: Vec<String>) -> Self {
+    pub fn new(result: &ExecutionResult, command: Vec<String>) -> Self {
         Self {
-            runtime,
+            runtime: result.real_time,
             timestamp: Utc::now(),
             command,
         }
@@ -71,11 +72,11 @@ pub fn load_all_benchmarks() -> Result<Vec<Benchmark>> {
     read_from_storage().map(|d| d.benchmarks)
 }
 
-pub fn append_benchmark(command: &[String], runtime: &Duration) -> Result<()> {
+pub fn append_benchmark(command: &[String], result: &ExecutionResult) -> Result<()> {
     let mut data = read_from_storage()?;
 
     data.benchmarks.push(Benchmark {
-        runtime: *runtime,
+        runtime: result.real_time,
         timestamp: Utc::now(),
         command: command.to_vec(),
     });
