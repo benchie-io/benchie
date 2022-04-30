@@ -129,5 +129,5 @@ fn create_execution_result() -> ExecutionResult {
 fn create_benchmark() -> Benchmark {
     let result = create_execution_result();
 
-    Benchmark::new(&result, vec!["ls".to_string(), "-la".to_string()])
+    Benchmark::new(&["ls".to_string(), "-la".to_string()], &result)
 }

@@ -1,10 +1,12 @@
 use crate::append_benchmark;
+use crate::storage::Value;
 use anyhow::{ensure, Context, Result};
 use libc::{
     c_char, c_int, pid_t, posix_spawn_file_actions_init, posix_spawn_file_actions_t,
     posix_spawnattr_init, posix_spawnattr_t, posix_spawnp, rusage, timeval, wait4,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::env;
 use std::ffi::CString;
 use std::mem::MaybeUninit;
@@ -15,7 +17,63 @@ pub struct ExecutionResult {
     pub user_time: Duration,
     pub system_time: Duration,
     pub real_time: Duration,
-    pub status: i32,
+    pub status_code: i64,
+}
+
+impl From<ExecutionResult> for HashMap<String, Value> {
+    fn from(result: ExecutionResult) -> Self {
+        let mut map = Self::new();
+        map.insert("user_time".to_string(), Value::Duration(result.user_time));
+        map.insert(
+            "system_time".to_string(),
+            Value::Duration(result.system_time),
+        );
+        map.insert("real_time".to_string(), Value::Duration(result.real_time));
+        map.insert(
+            "status_code".to_string(),
+            Value::Integer(result.status_code),
+        );
+
+        map
+    }
+}
+
+impl TryFrom<HashMap<String, Value>> for ExecutionResult {
+    type Error = ();
+
+    fn try_from(map: HashMap<String, Value>) -> std::result::Result<Self, Self::Error> {
+        let v = map.get("user_time").ok_or(())?;
+
+        let user_time = match v {
+            Value::Duration(dur) => dur,
+            _ => return Err(()),
+        };
+
+        let v = map.get("system_time").ok_or(())?;
+        let system_time = match v {
+            Value::Duration(dur) => dur,
+            _ => return Err(()),
+        };
+
+        let v = map.get("real_time").ok_or(())?;
+        let real_time = match v {
+            Value::Duration(dur) => dur,
+            _ => return Err(()),
+        };
+
+        let v = map.get("status").ok_or(())?;
+        let status_code = match v {
+            Value::Integer(int) => int,
+            _ => return Err(()),
+        };
+
+        Ok(Self {
+            user_time: *user_time,
+            system_time: *system_time,
+            real_time: *real_time,
+            status_code: *status_code,
+        })
+    }
 }
 
 pub fn benchmark(command_and_flags: &[String]) -> Result<()> {
@@ -101,7 +159,7 @@ pub fn execute_and_measure(command_and_flags: &[String]) -> Result<ExecutionResu
             user_time,
             system_time,
             real_time,
-            status: status.assume_init(),
+            status_code: status.assume_init().into(),
         })
     }
 }
