@@ -3,7 +3,7 @@ use std::time::Duration;
 
 #[test]
 fn test_execution_and_measurement_basic_functionality() {
-    let result = execute_and_measure(&["echo".to_string(), "hello".to_string()]);
+    let result = execute_and_measure(&["sleep".to_string(), "1".to_string()]);
 
     assert!(
         result.is_ok(),
