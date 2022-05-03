@@ -1,3 +1,4 @@
+use crate::cli::CliCommand;
 use anyhow::Result;
 use benchie::show;
 use benchie::{benchmark, initialize_crash_reporter};
@@ -9,12 +10,9 @@ fn main() -> Result<()> {
     initialize_crash_reporter();
 
     let raw_args: Vec<_> = env::args_os().collect();
-    let args = cli::parse_arguments(&raw_args)?;
 
-    // TODO: should be a subcommand?
-    if args.show {
-        show()
-    } else {
-        benchmark(&args.command)
+    match cli::parse_arguments(&raw_args)? {
+        CliCommand::Benchmark { command } => benchmark(&command),
+        CliCommand::Show => show(),
     }
 }

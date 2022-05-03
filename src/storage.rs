@@ -49,11 +49,7 @@ fn read_from_storage() -> Result<Data> {
 
     let raw = fs::read_to_string(format!("{}/data.json", PATH)).unwrap_or(default);
 
-    let result = serde_json::from_str(&raw).context("failed to parse benchie data file");
-
-    dbg!(&result);
-
-    result
+    serde_json::from_str(&raw).context("failed to parse benchie data file")
 }
 
 fn write_to_storage(data: &Data) -> Result<()> {
