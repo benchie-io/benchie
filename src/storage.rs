@@ -1,4 +1,5 @@
 use crate::benchmark::ExecutionResult;
+use crate::git::GitInfo;
 use anyhow::{Context, Result};
 use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -8,12 +9,12 @@ use std::fs;
 use std::path::Path;
 use std::time::Duration;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct Data {
     benchmarks: Vec<Benchmark>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type", content = "value")]
 pub enum Value {
     Timestamp(DateTime<Utc>),
@@ -21,16 +22,20 @@ pub enum Value {
     String(String),
     Float(f64),
     Integer(i64),
+    Bool(bool),
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Benchmark {
     pub data: HashMap<String, Value>,
 }
 
 impl Benchmark {
-    pub fn new(command: &[String], result: &ExecutionResult) -> Self {
+    pub fn new(command: &[String], result: &ExecutionResult, git: &Option<GitInfo>) -> Self {
         let mut data: HashMap<String, Value> = result.clone().into();
+        if let Some(git) = git {
+            data.extend(git.into_iter());
+        }
         data.insert("command".to_string(), Value::String(command.join(" ")));
         data.insert("created_at".to_string(), Value::Timestamp(Utc::now()));
 
@@ -68,10 +73,10 @@ pub fn load_all_benchmarks() -> Result<Vec<Benchmark>> {
     read_from_storage().map(|d| d.benchmarks)
 }
 
-pub fn append_benchmark(command: &[String], result: &ExecutionResult) -> Result<()> {
+pub fn append_benchmark(benchmark: &Benchmark) -> Result<()> {
     let mut data = read_from_storage()?;
 
-    data.benchmarks.push(Benchmark::new(command, result));
+    data.benchmarks.push(benchmark.clone());
 
     write_to_storage(&data)?;
 

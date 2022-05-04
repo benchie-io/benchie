@@ -1,5 +1,6 @@
-use crate::append_benchmark;
+use crate::git::{read_git_info, GitError};
 use crate::storage::Value;
+use crate::{append_benchmark, Benchmark};
 use anyhow::{ensure, Context, Result};
 use libc::{
     c_char, c_int, pid_t, posix_spawn_file_actions_init, posix_spawn_file_actions_t,
@@ -77,16 +78,37 @@ impl TryFrom<HashMap<String, Value>> for ExecutionResult {
 }
 
 pub fn benchmark(command_and_flags: &[String]) -> Result<()> {
+    let git_info = match read_git_info() {
+        Ok(info) => {
+            if info.is_dirty {
+                println!("warning: you have uncommited changed in your repository")
+            }
+            Some(info)
+        }
+        Err(GitError::NotFound) => {
+            println!("warning: could not find Git repository => no Git information will be saved for your benchmark");
+            None
+        }
+        Err(error) => {
+            return Err(error).context("error during reading of Git repository information");
+        }
+    };
+
     let result = execute_and_measure(command_and_flags).context("failed to execute command")?;
 
-    println!("Running \"{}\" took:", command_and_flags.join(" "),);
+    println!("Running \"{}\" took:", command_and_flags.join(" "));
     println!(
         "{:?} user {:?} system {:?} real",
         result.user_time, result.system_time, result.real_time
     );
 
-    // TODO: save result if execution was not successfull? (status != 0)
-    append_benchmark(command_and_flags, &result).context("unable to save new benchmark")
+    if result.status_code != 0 {
+        todo!("save result if execution was not successfully? (status != 0)");
+    }
+
+    let benchmark = Benchmark::new(command_and_flags, &result, &git_info);
+
+    append_benchmark(&benchmark).context("unable to save new benchmark")
 }
 
 pub fn execute_and_measure(command_and_flags: &[String]) -> Result<ExecutionResult> {
