@@ -5,9 +5,9 @@ use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
-use std::fs;
 use std::path::Path;
 use std::time::Duration;
+use std::{fmt, fs};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Data {
@@ -35,6 +35,19 @@ impl PartialEq for Value {
             (Value::Integer(lhs), Value::Integer(rhs)) => lhs == rhs,
             (Value::Bool(lhs), Value::Bool(rhs)) => lhs == rhs,
             _ => false,
+        }
+    }
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Value::Timestamp(v) => write!(f, "{}", v),
+            Value::Duration(v) => write!(f, "{}", format_args!("{:?}", v)),
+            Value::String(v) => write!(f, "{}", v),
+            Value::Float(v) => write!(f, "{}", v),
+            Value::Integer(v) => write!(f, "{}", v),
+            Value::Bool(v) => write!(f, "{}", v),
         }
     }
 }

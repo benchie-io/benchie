@@ -7,8 +7,14 @@ pub mod sub_commands {
 }
 
 pub enum CliCommand {
-    Benchmark { command: Vec<String> },
-    Show,
+    Benchmark {
+        command: Vec<String>,
+    },
+    Show {
+        row: Option<String>,
+        col: Option<String>,
+        metric: Option<String>,
+    },
 }
 
 pub fn parse_arguments(args: &[OsString]) -> Result<CliCommand> {
@@ -26,7 +32,25 @@ pub fn parse_arguments(args: &[OsString]) -> Result<CliCommand> {
         .subcommand(
             Command::new(sub_commands::SHOW)
                 .about("Shows benchmarking results")
-                .arg(arg!([NAME])),
+                .arg(
+                    arg!(--row <ROW> "The row to display")
+                        .short('r')
+                        .required(false)
+                        .requires("metric"),
+                )
+                .arg(
+                    arg!(--col <COLUMN> "The column to display")
+                        .short('c')
+                        .required(false)
+                        .requires("row")
+                        .requires("metric"),
+                )
+                .arg(
+                    arg!(<METRIC> "The metric to display")
+                        .required(false)
+                        .id("metric")
+                        .requires("row"),
+                ),
         )
         .try_get_matches_from(args)?;
 
@@ -36,7 +60,11 @@ pub fn parse_arguments(args: &[OsString]) -> Result<CliCommand> {
         CliCommand::Benchmark { command }
     } else {
         match matches.subcommand() {
-            Some(("show", _)) => CliCommand::Show,
+            Some(("show", sub_commands)) => CliCommand::Show {
+                row: sub_commands.value_of("row").map(str::to_string),
+                col: sub_commands.value_of("col").map(str::to_string),
+                metric: sub_commands.value_of("metric").map(str::to_string),
+            },
             m => panic!("unknown subcommand {:?}", m),
         }
     })
@@ -88,11 +116,59 @@ mod test {
 
     #[test]
     fn test_show_subcommand() {
-        let command = parse_arguments(&[os("benchie"), os("show")]);
+        let cmd_default_show = parse_arguments(&[os("benchie"), os("show")]);
 
         assert!(
-            matches!(command, Ok(CliCommand::Show)),
+            matches!(
+                cmd_default_show,
+                Ok(CliCommand::Show {
+                    row: None,
+                    col: None,
+                    metric: None
+                })
+            ),
             "should succeed to parse show subcommand"
         );
+    }
+
+    #[test]
+    fn show_1d_table_should_have_row_and_metric() {
+        match parse_arguments(&[
+            os("benchie"),
+            os("show"),
+            os("--row"),
+            os("test_row"),
+            os("test_metric"),
+        ]) {
+            Ok(CliCommand::Show {
+                row,
+                col: _,
+                metric,
+            }) => {
+                assert_eq!(row.unwrap(), "test_row");
+                assert_eq!(metric.unwrap(), "test_metric");
+            }
+            _ => panic!("show argument with given row and metric should work"),
+        }
+    }
+
+    #[test]
+    fn show_2d_table_should_have_row_col_and_metric() {
+        match parse_arguments(&[
+            os("benchie"),
+            os("show"),
+            os("--row"),
+            os("test_row"),
+            os("--col"),
+            os("test_column"),
+            os("test_metric"),
+        ]) {
+            Ok(CliCommand::Show { row, col, metric }) => {
+                assert_eq!(row.unwrap(), "test_row");
+                assert_eq!(col.unwrap(), "test_column");
+                assert_eq!(metric.unwrap(), "test_metric");
+            }
+            _ => panic!("show argument with given row, column, and metric should work"),
+        }
     }
 }
