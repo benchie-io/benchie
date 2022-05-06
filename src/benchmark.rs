@@ -77,7 +77,7 @@ impl TryFrom<HashMap<String, Value>> for ExecutionResult {
     }
 }
 
-pub fn benchmark(command_and_flags: &[String]) -> Result<()> {
+pub fn benchmark(command_and_flags: &[String], tags: &HashMap<String, String>) -> Result<()> {
     let git_info = match read_git_info() {
         Ok(info) => {
             if info.is_dirty {
@@ -106,7 +106,7 @@ pub fn benchmark(command_and_flags: &[String]) -> Result<()> {
         todo!("save result if execution was not successfully? (status != 0)");
     }
 
-    let benchmark = Benchmark::new(command_and_flags, &result, &git_info);
+    let benchmark = Benchmark::new(command_and_flags, &result, &git_info, tags);
 
     append_benchmark(&benchmark).context("unable to save new benchmark")
 }

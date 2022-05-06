@@ -58,13 +58,26 @@ pub struct Benchmark {
 }
 
 impl Benchmark {
-    pub fn new(command: &[String], result: &ExecutionResult, git: &Option<GitInfo>) -> Self {
+    pub fn new(
+        command: &[String],
+        result: &ExecutionResult,
+        git: &Option<GitInfo>,
+        tags: &HashMap<String, String>,
+    ) -> Self {
         let mut data: HashMap<String, Value> = result.clone().into();
         if let Some(git) = git {
             data.extend(git.into_iter());
         }
         data.insert("command".to_string(), Value::String(command.join(" ")));
         data.insert("created_at".to_string(), Value::Timestamp(Utc::now()));
+
+        tags.iter().for_each(|(key, value)| {
+            if data.get(key.as_str()).is_some() {
+                println!("warning: overwriting key \"{key}\" with user provided tag");
+                data.remove(key);
+            }
+            data.insert(key.clone(), Value::String(value.clone()));
+        });
 
         Self { data }
     }
