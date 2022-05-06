@@ -25,6 +25,20 @@ pub enum Value {
     Bool(bool),
 }
 
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Value::Timestamp(lhs), Value::Timestamp(rhs)) => lhs == rhs,
+            (Value::Duration(lhs), Value::Duration(rhs)) => lhs == rhs,
+            (Value::String(lhs), Value::String(rhs)) => lhs == rhs,
+            (Value::Float(lhs), Value::Float(rhs)) => lhs == rhs,
+            (Value::Integer(lhs), Value::Integer(rhs)) => lhs == rhs,
+            (Value::Bool(lhs), Value::Bool(rhs)) => lhs == rhs,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Benchmark {
     pub data: HashMap<String, Value>,
