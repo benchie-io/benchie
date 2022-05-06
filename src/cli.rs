@@ -129,8 +129,10 @@ mod test {
             ),
             "should succeed to parse show subcommand"
         );
+    }
 
-        // valid 1-d table show
+    #[test]
+    fn show_1d_table_should_have_row_and_metric() {
         match parse_arguments(&[
             os("benchie"),
             os("show"),
@@ -148,8 +150,10 @@ mod test {
             }
             _ => panic!("show argument with given row and metric should work"),
         }
+    }
 
-        // valid 2-d table show
+    #[test]
+    fn show_2d_table_should_have_row_col_and_metric() {
         match parse_arguments(&[
             os("benchie"),
             os("show"),
