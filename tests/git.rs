@@ -82,7 +82,7 @@ fn git_info_of_repo_with_commit_history() {
             "valid commit hash is 40 chars long"
         );
         assert_eq!(
-            info.commit_message, "update\n",
+            info.commit_message, "update",
             "verify that we get the latest commit message"
         );
     });
