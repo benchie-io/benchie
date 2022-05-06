@@ -1,14 +1,17 @@
 use anyhow::Result;
 use clap::{arg, crate_name, crate_version, Arg, Command};
+use std::collections::HashMap;
 use std::ffi::OsString;
 
 pub mod sub_commands {
     pub const SHOW: &str = "show";
 }
 
+#[derive(Debug, Clone)]
 pub enum CliCommand {
     Benchmark {
         command: Vec<String>,
+        tags: HashMap<String, String>,
     },
     Show {
         row: Option<String>,
@@ -24,11 +27,21 @@ pub fn parse_arguments(args: &[OsString]) -> Result<CliCommand> {
         .arg_required_else_help(true)
         .args_conflicts_with_subcommands(true)
         .arg(
+            Arg::new("tag")
+                .long("tag")
+                .takes_value(true)
+                .multiple_occurrences(true)
+                .validator(is_key_value_pair),
+        )
+        .arg(
             Arg::new("command")
                 .takes_value(true)
                 .multiple_values(true)
-                .allow_hyphen_values(true),
+                .allow_hyphen_values(true)
+                .required(true),
         )
+        .subcommand_precedence_over_arg(false)
+        .subcommand_negates_reqs(true)
         .subcommand(
             Command::new(sub_commands::SHOW)
                 .about("Shows benchmarking results")
@@ -54,20 +67,47 @@ pub fn parse_arguments(args: &[OsString]) -> Result<CliCommand> {
         )
         .try_get_matches_from(args)?;
 
-    Ok(if let Some(command) = matches.values_of("command") {
-        let command: Vec<String> = command.into_iter().map(|s| s.to_owned()).collect();
+    Ok(match matches.subcommand() {
+        Some((sub_commands::SHOW, sub_commands)) => CliCommand::Show {
+            row: sub_commands.value_of("row").map(str::to_string),
+            col: sub_commands.value_of("col").map(str::to_string),
+            metric: sub_commands.value_of("metric").map(str::to_string),
+        },
+        m => {
+            if let Some(command) = matches.values_of("command") {
+                let command: Vec<String> = command.into_iter().map(|s| s.to_owned()).collect();
+                let mut tags = HashMap::<String, String>::new();
 
-        CliCommand::Benchmark { command }
-    } else {
-        match matches.subcommand() {
-            Some(("show", sub_commands)) => CliCommand::Show {
-                row: sub_commands.value_of("row").map(str::to_string),
-                col: sub_commands.value_of("col").map(str::to_string),
-                metric: sub_commands.value_of("metric").map(str::to_string),
-            },
-            m => panic!("unknown subcommand {:?}", m),
+                if let Some(tags_raw) = matches.values_of("tag") {
+                    tags.extend(tags_raw.into_iter().map(parse_key_value_pair));
+                }
+
+                CliCommand::Benchmark { command, tags }
+            } else {
+                panic!(
+                    "can not parse input arguments ({:?}) to subcommand {:?}",
+                    args, m
+                )
+            }
         }
     })
+}
+
+fn parse_key_value_pair(v: &str) -> (String, String) {
+    let mut it = v.split('=');
+    let key = it.next().expect("already validated").to_owned();
+    let value = it.next().expect("already validated").to_owned();
+
+    (key, value)
+}
+
+fn is_key_value_pair(v: &str) -> Result<(), String> {
+    let kv: Vec<_> = v.split('=').collect();
+
+    match (kv.get(0), kv.get(1)) {
+        (Some(key), Some(value)) if !key.is_empty() && !value.is_empty() => Ok(()),
+        _ => Err(String::from("tag has to be a <key>=<value> pair")),
+    }
 }
 
 #[cfg(test)]
@@ -90,7 +130,7 @@ mod test {
     fn test_benchmark_command() {
         let result = parse_arguments(&[os("benchie"), os("time")]);
 
-        if let Ok(CliCommand::Benchmark { command }) = result {
+        if let Ok(CliCommand::Benchmark { command, tags: _ }) = result {
             assert_eq!(command.len(), 1, "command should has length 1");
             assert_eq!(command[0], "time", "first part of command should be time");
         } else {
@@ -102,7 +142,7 @@ mod test {
     fn test_benchmark_with_hyphen_command_args() {
         let result = parse_arguments(&[os("benchie"), os("time"), os("--SHOW")]);
 
-        if let Ok(CliCommand::Benchmark { command }) = result {
+        if let Ok(CliCommand::Benchmark { command, tags: _ }) = result {
             assert_eq!(command.len(), 2, "command should has length 2");
             assert_eq!(command[0], "time", "first part of command should be time");
             assert_eq!(
@@ -153,6 +193,29 @@ mod test {
     }
 
     #[test]
+    fn tag_arg_is_only_acceptable_if_command_is_set() {
+        let result = parse_arguments(&[os("benchie"), os("--tag"), os("key=value")]);
+
+        assert!(
+            result.is_err(),
+            "tag without benchmarking command is not a valid input"
+        );
+    }
+
+    #[test]
+    fn tag_arg_with_command_should_work() {
+        match parse_arguments(&[os("benchie"), os("--tag"), os("key=value"), os("program")]) {
+            Ok(CliCommand::Benchmark { command, tags }) => {
+                assert_eq!(command.len(), 1);
+                assert_eq!(command.get(0).unwrap(), "program");
+                assert_eq!(tags.len(), 1);
+                assert_eq!(tags.get("key").unwrap(), "value");
+            }
+            _ => panic!("tag argument with command should work"),
+        }
+    }
+
+    #[test]
     fn show_2d_table_should_have_row_col_and_metric() {
         match parse_arguments(&[
             os("benchie"),
@@ -169,6 +232,23 @@ mod test {
                 assert_eq!(metric.unwrap(), "test_metric");
             }
             _ => panic!("show argument with given row, column, and metric should work"),
+        }
+    }
+
+    #[test]
+    fn multiple_tags_are_allowed() {
+        match parse_arguments(&[
+            os("benchie"),
+            os("--tag"),
+            os("key=value"),
+            os("--tag"),
+            os("bla=value"),
+            os("program"),
+        ]) {
+            Ok(CliCommand::Benchmark { command: _, tags }) => {
+                assert_eq!(tags.len(), 2);
+            }
+            _ => panic!("multiple tags should be allowed"),
         }
     }
 }

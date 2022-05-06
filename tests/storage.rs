@@ -1,8 +1,9 @@
 mod common;
 
 use crate::common::with_temp_dir;
-use benchie::{append_benchmark, load_all_benchmarks, Benchmark, ExecutionResult, GitInfo};
+use benchie::{append_benchmark, load_all_benchmarks, Benchmark, ExecutionResult, GitInfo, Value};
 use serial_test::serial;
+use std::collections::HashMap;
 use std::fs;
 use std::fs::create_dir;
 use std::time::Duration;
@@ -110,6 +111,24 @@ fn test_with_existing_dir_and_data() {
     })
 }
 
+#[test]
+#[serial]
+fn should_save_tags_in_benchmark() {
+    with_temp_dir(|_| {
+        append_benchmark(&create_benchmark()).expect("should succeed to append a benchmark");
+
+        let benchmarks = load_all_benchmarks().expect("should successfully load benchmarks");
+
+        let benchmark = benchmarks.get(0).expect("should have loaded one benchmark");
+
+        assert_eq!(
+            benchmark.data.get("key"),
+            Some(&Value::String(String::from("value"))),
+            "should have added a key=value pair"
+        );
+    })
+}
+
 fn create_execution_result() -> ExecutionResult {
     ExecutionResult {
         real_time: Duration::from_secs(1),
@@ -127,5 +146,13 @@ fn create_benchmark() -> Benchmark {
         is_dirty: false,
     };
 
-    Benchmark::new(&["ls".to_string(), "-la".to_string()], &result, &Some(info))
+    let mut tags = HashMap::new();
+    tags.insert(String::from("key"), String::from("value"));
+
+    Benchmark::new(
+        &["ls".to_string(), "-la".to_string()],
+        &result,
+        &Some(info),
+        &tags,
+    )
 }
