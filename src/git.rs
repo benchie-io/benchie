@@ -70,9 +70,15 @@ pub fn read_git_info() -> Result<GitInfo, GitError> {
     let commit = read_latest_commit(&repo, &branch)?;
     let is_dirty = is_dirty(&repo)?;
 
+    let first_line = commit
+        .message()
+        .and_then(|msg| msg.split('\n').next())
+        .unwrap_or("")
+        .to_owned();
+
     Ok(GitInfo {
         commit_id: commit.id().to_string(),
-        commit_message: commit.message().unwrap_or("").to_owned(),
+        commit_message: first_line,
         branch,
         is_dirty,
     })
