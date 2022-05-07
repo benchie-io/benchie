@@ -1,4 +1,4 @@
-use crate::{load_all_benchmarks, Benchmark, Value, Values};
+use crate::{load_all_benchmarks, BenchmarkRaw, Value, Values};
 use anyhow::Result;
 use cli_table::{format::Justify, Cell, Style, Table};
 use std::collections::HashMap;
@@ -62,7 +62,7 @@ struct KeyInfo {
 }
 
 fn compute_key_infos<'a>(
-    benchmarks: impl IntoIterator<Item = &'a Benchmark>,
+    benchmarks: impl IntoIterator<Item = &'a BenchmarkRaw>,
     max_example_values: usize,
 ) -> HashMap<String, KeyInfo> {
     let mut info_per_key = HashMap::<String, KeyInfo>::new();
@@ -89,7 +89,7 @@ fn compute_key_infos<'a>(
     info_per_key
 }
 
-fn apply_filter(benchmark: &Benchmark, filter: &HashMap<String, String>) -> bool {
+fn apply_filter(benchmark: &BenchmarkRaw, filter: &HashMap<String, String>) -> bool {
     filter.iter().all(|(key, value)| {
         benchmark
             .data
@@ -240,24 +240,18 @@ pub fn show_2d_table(
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{Benchmark, ExecutionResult};
 
     #[test]
     fn check_if_occurrences_are_accumulated_correctly() {
-        let b1 = Benchmark::new(
-            &[String::from("cmd")],
-            &ExecutionResult::default(),
-            &None,
-            &HashMap::new(),
-        );
-        let mut tags = HashMap::new();
-        tags.insert(String::from("key"), String::from("value"));
-        let b2 = Benchmark::new(
-            &[String::from("cmd")],
-            &ExecutionResult::default(),
-            &None,
-            &tags,
-        );
+        let mut b1 = BenchmarkRaw::default();
+        b1.data
+            .insert("command".to_string(), Value::String("program".to_string()));
+
+        let mut b2 = BenchmarkRaw::default();
+        b2.data
+            .insert("command".to_string(), Value::String("program".to_string()));
+        b2.data
+            .insert("key".to_string(), Value::String("value".to_string()));
 
         let infos = compute_key_infos(&[b1, b2], 1);
 
@@ -275,12 +269,7 @@ mod test {
 
     #[test]
     fn remove_benchmark_with_missing_key_in_filter() {
-        let benchmark = Benchmark::new(
-            &[String::from("cmd")],
-            &ExecutionResult::default(),
-            &None,
-            &HashMap::new(),
-        );
+        let benchmark = BenchmarkRaw::default();
 
         assert!(
             !apply_filter(
@@ -292,12 +281,10 @@ mod test {
     }
     #[test]
     fn remove_benchmark_with_wrong_value_in_filter() {
-        let benchmark = Benchmark::new(
-            &[String::from("cmd")],
-            &ExecutionResult::default(),
-            &None,
-            &HashMap::from([("key".to_string(), "value".to_string())]),
-        );
+        let mut benchmark = BenchmarkRaw::default();
+        benchmark
+            .data
+            .insert("key".to_string(), Value::String("value".to_string()));
 
         let filter = HashMap::from([("key".to_string(), "value2".to_string())]);
         assert!(
@@ -313,12 +300,12 @@ mod test {
             ("key2".to_string(), "value2".to_string()),
         ]);
 
-        let benchmark = Benchmark::new(
-            &[String::from("cmd")],
-            &ExecutionResult::default(),
-            &None,
-            &filter,
-        );
+        let benchmark = BenchmarkRaw {
+            data: filter
+                .iter()
+                .map(|(k, v)| (k.to_owned(), Value::String(v.clone())))
+                .collect(),
+        };
 
         assert!(
             apply_filter(&benchmark, &filter),

@@ -80,8 +80,8 @@ fn test_with_existing_dir_and_data() {
 
         let benchmark = create_benchmark();
         let data = format!(
-            "{{ \"benchmarks\": [{}]}}",
-            serde_json::to_string(&benchmark).unwrap()
+            "{{ \"schema\": 1, \"benchmarks\": [{}]}}",
+            serde_json::to_string_pretty(&benchmark).unwrap()
         );
 
         let _ = fs::write(&data_file_path, data);

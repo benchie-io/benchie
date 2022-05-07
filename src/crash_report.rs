@@ -1,23 +1,11 @@
-use bytesize::ByteSize;
-use std::env;
+use crate::system::System;
 use std::fmt::{Display, Formatter};
 use std::panic;
-use sysinfo::{System, SystemExt};
 use url::Url;
 
 struct CrashReport {
     panic_log: String,
-    total_memory: ByteSize,
-    used_memory: ByteSize,
-    total_swap: ByteSize,
-    used_swap: ByteSize,
-    cores: usize,
-    os: String,
-    os_family: String,
-    os_version: String,
-    kernel_version: String,
-    arch: String,
-    benchie_version: String,
+    system: System,
 }
 
 const GITHUB_NEW_ISSUE_URL: &str = "https://github.com/benchie-io/benchie/issues/new";
@@ -25,30 +13,9 @@ const MAX_URL_LENGTH: usize = 4000;
 
 impl CrashReport {
     fn new(panic_info: impl Display) -> Self {
-        // Please note that we use "new_all" to ensure that all list of
-        // components, network interfaces, disks and users are already
-        // filled!
-        let mut system = System::new_all();
-        // First we update all information of our `System` struct.
-        system.refresh_all();
-
         Self {
             panic_log: format!("{}", panic_info),
-            total_memory: ByteSize::kb(system.total_memory()),
-            used_memory: ByteSize::kb(system.used_memory()),
-            total_swap: ByteSize::kb(system.total_swap()),
-            used_swap: ByteSize::kb(system.used_swap()),
-            cores: system.processors().len(),
-            os: env::consts::OS.to_owned(),
-            os_family: env::consts::FAMILY.to_owned(),
-            os_version: system.os_version().unwrap_or_else(|| "unknown".to_owned()),
-            kernel_version: system
-                .kernel_version()
-                .unwrap_or_else(|| "unknown".to_owned()),
-            arch: env::consts::ARCH.to_owned(),
-            benchie_version: option_env!("CARGO_PKG_VERSION")
-                .unwrap_or("not found")
-                .to_owned(),
+            system: System::default(),
         }
     }
 
@@ -98,17 +65,17 @@ impl Display for CrashReport {
 `{}`
 ",
             self.panic_log,
-            self.os,
-            self.os_family,
-            self.os_version,
-            self.kernel_version,
-            self.arch,
-            self.cores,
-            self.total_memory,
-            self.used_memory,
-            self.total_swap,
-            self.used_swap,
-            self.benchie_version
+            self.system.os,
+            self.system.os_family,
+            self.system.os_version,
+            self.system.kernel_version,
+            self.system.arch,
+            self.system.cores,
+            self.system.total_memory,
+            self.system.used_memory,
+            self.system.total_swap,
+            self.system.used_swap,
+            self.system.benchie_version
         )
     }
 }

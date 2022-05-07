@@ -1,3 +1,4 @@
+use crate::value;
 use crate::Value;
 use anyhow::{anyhow, ensure, Context, Result};
 use git2::{BranchType, Commit, Repository, StatusOptions, Statuses};
@@ -7,9 +8,16 @@ use thiserror::Error;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GitInfo {
+    #[serde(with = "value")]
     pub commit_id: String,
+
+    #[serde(with = "value")]
     pub commit_message: String,
+
+    #[serde(with = "value")]
     pub branch: String,
+
+    #[serde(with = "value")]
     pub is_dirty: bool,
 }
 
