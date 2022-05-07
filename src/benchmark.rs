@@ -6,7 +6,8 @@ use crate::{value, GitInfo};
 use anyhow::{ensure, Context, Result};
 use chrono::prelude::*;
 use libc::{
-    c_char, c_int, pid_t, posix_spawn_file_actions_init, posix_spawn_file_actions_t,
+    c_char, c_int, close, pid_t, pipe, posix_spawn_file_actions_addclose,
+    posix_spawn_file_actions_adddup2, posix_spawn_file_actions_init, posix_spawn_file_actions_t,
     posix_spawnattr_init, posix_spawnattr_t, posix_spawnp, rusage, timeval, wait4,
 };
 use serde::{Deserialize, Serialize};
@@ -15,6 +16,7 @@ use std::env;
 use std::ffi::CString;
 use std::mem::MaybeUninit;
 use std::time::{Duration, Instant};
+use std::{fs::File, io::Read, os::unix::io::FromRawFd};
 
 #[derive(Serialize, Default, Deserialize, Debug, Clone)]
 pub struct BenchmarkRaw {
@@ -198,9 +200,28 @@ pub fn execute_and_measure(command_and_flags: &[String]) -> Result<ExecutionResu
     let envp = create_null_terminated(&envs);
     let argv = create_null_terminated(&command_and_flags);
 
+    let mut pipe_file_descriptors = [0, 0];
+
     unsafe {
         ensure!(posix_spawn_file_actions_init(file_actions.as_mut_ptr()) == 0);
         ensure!(posix_spawnattr_init(spawnattr.as_mut_ptr()) == 0);
+
+        ensure!(pipe(pipe_file_descriptors.as_mut_ptr()) != -1);
+
+        // tell spawned process to close unused read end of pipe
+        ensure!(
+            posix_spawn_file_actions_addclose(file_actions.as_mut_ptr(), pipe_file_descriptors[0])
+                == 0
+        );
+
+        // tell spawned process to replace file descriptor 1 (stdout) with write end of the pipe
+        ensure!(
+            posix_spawn_file_actions_adddup2(
+                file_actions.as_mut_ptr(),
+                pipe_file_descriptors[1],
+                1
+            ) == 0
+        );
 
         let now = Instant::now();
 
@@ -212,6 +233,8 @@ pub fn execute_and_measure(command_and_flags: &[String]) -> Result<ExecutionResu
             argv.as_ptr(),
             envp.as_ptr(),
         );
+
+        close(pipe_file_descriptors[1]);
 
         ensure!(
             result == 0,
@@ -234,6 +257,12 @@ pub fn execute_and_measure(command_and_flags: &[String]) -> Result<ExecutionResu
 
         let user_time = timeval_to_duration(rusage.assume_init().ru_utime)?;
         let system_time = timeval_to_duration(rusage.assume_init().ru_stime)?;
+
+        let mut f = File::from_raw_fd(pipe_file_descriptors[0]);
+        let mut cmd_output = String::new();
+        f.read_to_string(&mut cmd_output)?;
+
+        print!("{}", cmd_output);
 
         Ok(ExecutionResult {
             user_time,
