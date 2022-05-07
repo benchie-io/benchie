@@ -264,7 +264,7 @@ mod test {
             infos.get("key").unwrap().occurrences,
             1,
             "user provided tag was only present one time, therefore 1 occurrence"
-        );
+        )
     }
 
     #[test]

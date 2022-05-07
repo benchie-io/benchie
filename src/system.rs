@@ -139,14 +139,12 @@ mod test {
 
         assert!(s.total_memory.0 > 0);
         assert!(s.used_memory.0 > 0);
-        assert!(s.total_swap.0 > 0);
-        assert!(s.used_swap.0 > 0);
         assert!(s.cores > 0);
         assert!(matches!(s.os.as_str(), "macos" | "windows" | "linux"));
         assert!(matches!(s.os_family.as_str(), "unix"));
-        assert!(s.os_version.len() > 3 && s.os_version.contains('.'));
-        assert!(s.kernel_version.len() > 3 && s.kernel_version.contains('.'));
-        assert!(matches!(s.arch.as_str(), "aarch64" | "x86"));
-        assert!(s.benchie_version.len() > 3 && s.benchie_version.contains('.'));
+        assert!(!s.os_version.is_empty());
+        assert!(!s.kernel_version.is_empty());
+        assert!(matches!(s.arch.as_str(), "aarch64" | "x86_64"));
+        assert!(s.benchie_version.len() >= 5 && s.benchie_version.contains('.'));
     }
 }

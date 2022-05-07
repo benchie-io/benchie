@@ -122,7 +122,12 @@ fn parse_key_value_pairs(it: Option<Values>) -> Result<HashMap<String, String>> 
     let unique_keys = pairs.iter().unique_by(|(key, _)| key).count();
 
     if pairs.len() != unique_keys {
-        bail!("")
+        let duplicates: Vec<_> = pairs.iter().duplicates_by(|(key, _)| key).collect();
+
+        bail!(
+            "found multiple duplicates when checking key value pairs: {:?}",
+            duplicates
+        )
     } else {
         Ok(pairs.into_iter().collect())
     }
