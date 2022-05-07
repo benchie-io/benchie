@@ -1,5 +1,5 @@
 use crate::git::{read_git_info, GitError};
-use crate::storage::Value;
+use crate::Value;
 use crate::{append_benchmark, Benchmark};
 use anyhow::{ensure, Context, Result};
 use libc::{
