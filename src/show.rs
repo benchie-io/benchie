@@ -1,4 +1,4 @@
-use crate::{load_all_benchmarks, Benchmark, Value};
+use crate::{load_all_benchmarks, Benchmark, Value, Values};
 use anyhow::Result;
 use cli_table::{format::Justify, Cell, Style, Table};
 use std::collections::HashMap;
@@ -110,16 +110,22 @@ pub fn show_1d_table(row: String, metric: String) -> Result<()> {
         }
     }
 
-    // convert table to TableStruct and set title
-    let table = table
-        .table()
-        .title(vec![
-            row.clone().cell().bold(true),
-            metric.clone().cell().bold(true),
-        ])
-        .bold(true);
+    println!("Showing 1-dimensional table with:");
+    println!("row: {}, metric: {}\n", row, metric);
 
-    println!("{}", table.display()?);
+    if table.is_empty() {
+        println!("Result is empty");
+    } else {
+        // convert table to TableStruct and set title
+        let table = table
+            .table()
+            .title(vec![
+                row.clone().cell().bold(true),
+                metric.clone().cell().bold(true),
+            ])
+            .bold(true);
+        println!("{}", table.display()?);
+    }
 
     if empty_matches > 0 {
         println!(
@@ -131,8 +137,86 @@ pub fn show_1d_table(row: String, metric: String) -> Result<()> {
     Ok(())
 }
 
-pub fn show_2d_table(_row: String, _col: String, _metric: String) -> Result<()> {
-    todo!("implement 2d table")
+pub fn show_2d_table(row: String, col: String, metric: String) -> Result<()> {
+    let benchmarks = load_all_benchmarks()?;
+
+    let mut matrix: HashMap<String, HashMap<String, Values>> = HashMap::new();
+    let mut table = vec![];
+    let mut table_header = vec!["".cell()];
+
+    let mut col_to_pos = HashMap::new();
+    let mut pos = 1;
+
+    for benchmark in benchmarks.iter() {
+        if let (Some(row_value), Some(col_value), Some(metric_value)) = (
+            benchmark.data.get(&row),
+            benchmark.data.get(&col),
+            benchmark.data.get(&metric),
+        ) {
+            let row_value = format!("{}", row_value);
+            let col_value = format!("{}", col_value);
+
+            if !col_to_pos.contains_key(&col_value) {
+                table_header.push(col_value.clone().cell().bold(true));
+                col_to_pos.insert(col_value.clone(), pos);
+                pos += 1;
+            }
+
+            // insert into 3d matrix:
+            // first dimension does not exist
+            if !matrix.contains_key(&row_value) {
+                matrix.insert(row_value.clone(), HashMap::new());
+                matrix
+                    .get_mut(&row_value)
+                    .expect("checked")
+                    .insert(col_value.clone(), Values(vec![metric_value.clone()]));
+            } else {
+                // second dimension does not exist
+                if !matrix[&row_value].contains_key(&col_value) {
+                    matrix
+                        .get_mut(&row_value)
+                        .expect("checked")
+                        .insert(col_value.clone(), Values(vec![metric_value.clone()]));
+
+                // all dimensions already exist
+                } else {
+                    matrix
+                        .get_mut(&row_value)
+                        .expect("checked")
+                        .get_mut(&col_value)
+                        .expect("checked")
+                        .push(metric_value.clone());
+                }
+            }
+        }
+    }
+
+    // build table
+    for (row, col_to_metrics) in matrix.iter() {
+        let mut table_row = vec![row.clone().cell()];
+        for _ in 1..table_header.len() {
+            table_row.push("".cell());
+        }
+
+        for (col, metrics) in col_to_metrics.iter() {
+            // TODO: here we can aggregate 'metrics'
+            let metric_value = format!("{}", metrics);
+            table_row[col_to_pos[col]] = metric_value.cell();
+        }
+        table.push(table_row);
+    }
+
+    println!("Showing 2-dimensional table with:");
+    println!("row: {}, col: {}, metric: {}\n", row, col, metric);
+
+    if table.is_empty() {
+        println!("Result is empty");
+    } else {
+        let table = table.table().title(table_header);
+        println!("{}", table.display()?);
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

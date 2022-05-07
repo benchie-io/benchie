@@ -1,4 +1,4 @@
-use crate::storage::Value;
+use crate::Value;
 use anyhow::{anyhow, ensure, Context, Result};
 use git2::{BranchType, Commit, Repository, StatusOptions, Statuses};
 use serde::{Deserialize, Serialize};
