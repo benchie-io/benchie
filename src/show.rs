@@ -3,9 +3,13 @@ use anyhow::Result;
 use cli_table::{format::Justify, Cell, Style, Table};
 use std::collections::HashMap;
 
-pub fn show() -> Result<()> {
+pub fn show(filter: &HashMap<String, String>) -> Result<()> {
     const EXAMPLE_VALUES_DISPLAYED: usize = 3;
-    let key_infos = compute_key_infos(&load_all_benchmarks()?, EXAMPLE_VALUES_DISPLAYED);
+    let benchmarks = load_all_benchmarks()?;
+    let key_infos = compute_key_infos(
+        benchmarks.iter().filter(|b| apply_filter(b, filter)),
+        EXAMPLE_VALUES_DISPLAYED,
+    );
 
     let rows: Vec<_> = key_infos
         .iter()
@@ -57,8 +61,8 @@ struct KeyInfo {
     example_values: Vec<Value>,
 }
 
-fn compute_key_infos(
-    benchmarks: &[Benchmark],
+fn compute_key_infos<'a>(
+    benchmarks: impl IntoIterator<Item = &'a Benchmark>,
     max_example_values: usize,
 ) -> HashMap<String, KeyInfo> {
     let mut info_per_key = HashMap::<String, KeyInfo>::new();
@@ -85,13 +89,22 @@ fn compute_key_infos(
     info_per_key
 }
 
-pub fn show_1d_table(row: String, metric: String) -> Result<()> {
+fn apply_filter(benchmark: &Benchmark, filter: &HashMap<String, String>) -> bool {
+    filter.iter().all(|(key, value)| {
+        benchmark
+            .data
+            .get(key)
+            .map_or(false, |other| &other.to_string() == value)
+    })
+}
+
+pub fn show_1d_table(row: String, metric: String, filter: &HashMap<String, String>) -> Result<()> {
     let benchmarks = load_all_benchmarks()?;
 
     let mut table = vec![];
     let mut empty_matches = 0;
 
-    for benchmark in benchmarks.iter() {
+    for benchmark in benchmarks.iter().filter(|b| apply_filter(b, filter)) {
         let row_value = benchmark.data.get(&row);
         let metric_value = benchmark.data.get(&metric);
 
@@ -137,7 +150,12 @@ pub fn show_1d_table(row: String, metric: String) -> Result<()> {
     Ok(())
 }
 
-pub fn show_2d_table(row: String, col: String, metric: String) -> Result<()> {
+pub fn show_2d_table(
+    row: String,
+    col: String,
+    metric: String,
+    filter: &HashMap<String, String>,
+) -> Result<()> {
     let benchmarks = load_all_benchmarks()?;
 
     let mut matrix: HashMap<String, HashMap<String, Values>> = HashMap::new();
@@ -147,7 +165,7 @@ pub fn show_2d_table(row: String, col: String, metric: String) -> Result<()> {
     let mut col_to_pos = HashMap::new();
     let mut pos = 1;
 
-    for benchmark in benchmarks.iter() {
+    for benchmark in benchmarks.iter().filter(|b| apply_filter(b, filter)) {
         if let (Some(row_value), Some(col_value), Some(metric_value)) = (
             benchmark.data.get(&row),
             benchmark.data.get(&col),
@@ -252,6 +270,59 @@ mod test {
             infos.get("key").unwrap().occurrences,
             1,
             "user provided tag was only present one time, therefore 1 occurrence"
+        );
+    }
+
+    #[test]
+    fn remove_benchmark_with_missing_key_in_filter() {
+        let benchmark = Benchmark::new(
+            &[String::from("cmd")],
+            &ExecutionResult::default(),
+            &None,
+            &HashMap::new(),
+        );
+
+        assert!(
+            !apply_filter(
+                &benchmark,
+                &HashMap::from([("key".to_string(), "value".to_string())])
+            ),
+            "if one key value pair is missing, the benchmark should get filtered out"
+        );
+    }
+    #[test]
+    fn remove_benchmark_with_wrong_value_in_filter() {
+        let benchmark = Benchmark::new(
+            &[String::from("cmd")],
+            &ExecutionResult::default(),
+            &None,
+            &HashMap::from([("key".to_string(), "value".to_string())]),
+        );
+
+        let filter = HashMap::from([("key".to_string(), "value2".to_string())]);
+        assert!(
+            !apply_filter(&benchmark, &filter),
+            "benchmark should get filtered out if the value of a filter doesn't match the value in a benchmark"
+        );
+    }
+
+    #[test]
+    fn benchmark_should_not_get_filtered_out_if_all_filters_do_match() {
+        let filter = HashMap::from([
+            ("key".to_string(), "value".to_string()),
+            ("key2".to_string(), "value2".to_string()),
+        ]);
+
+        let benchmark = Benchmark::new(
+            &[String::from("cmd")],
+            &ExecutionResult::default(),
+            &None,
+            &filter,
+        );
+
+        assert!(
+            apply_filter(&benchmark, &filter),
+            "benchmark should pass the filter if all key value pairs match the filter"
         );
     }
 }
