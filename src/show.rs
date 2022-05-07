@@ -32,7 +32,10 @@ pub fn show(filter: &HashMap<String, String>) -> Result<()> {
         ])
         .bold(true);
 
-    println!("Basic information about all your saved benchmarks:");
+    println!(
+        "Basic information about all your {} saved benchmarks:",
+        benchmarks.len()
+    );
     println!("{}", table.display()?);
 
     Ok(())
@@ -59,19 +62,28 @@ fn display_example_values(values: &[Value]) -> String {
 struct KeyInfo {
     occurrences: u64,
     example_values: Vec<Value>,
+    example_values_str_len: usize,
 }
 
-fn compute_key_infos<'a>(
-    benchmarks: impl IntoIterator<Item = &'a BenchmarkRaw>,
-    max_example_values: usize,
-) -> HashMap<String, KeyInfo> {
+fn compute_key_infos<'a, It>(benchmarks: It, max_example_values: usize) -> HashMap<String, KeyInfo>
+where
+    It: IntoIterator<Item = &'a BenchmarkRaw>,
+    <It as IntoIterator>::IntoIter: DoubleEndedIterator,
+{
+    const MAX_EXAMPLE_VALUE_LENGTH: usize = 120;
     let mut info_per_key = HashMap::<String, KeyInfo>::new();
 
-    for benchmark in benchmarks {
+    for benchmark in benchmarks.into_iter().rev() {
         for (key, value) in benchmark.data.iter() {
+            let serialized_len = value.to_string().len();
+
             if let Some(info) = info_per_key.get_mut(key) {
-                if info.example_values.len() < max_example_values {
+                if info.example_values.len() < max_example_values
+                    && info.example_values_str_len + serialized_len <= MAX_EXAMPLE_VALUE_LENGTH
+                    && !info.example_values.iter().any(|v| v == value)
+                {
                     info.example_values.push(value.clone());
+                    info.example_values_str_len += serialized_len
                 }
                 info.occurrences += 1;
             } else {
@@ -79,7 +91,12 @@ fn compute_key_infos<'a>(
                     key.clone(),
                     KeyInfo {
                         occurrences: 1,
-                        example_values: vec![value.clone()],
+                        example_values: if serialized_len <= MAX_EXAMPLE_VALUE_LENGTH {
+                            vec![value.clone()]
+                        } else {
+                            vec![]
+                        },
+                        example_values_str_len: serialized_len,
                     },
                 );
             }
@@ -265,6 +282,49 @@ mod test {
             1,
             "user provided tag was only present one time, therefore 1 occurrence"
         )
+    }
+
+    #[test]
+    fn show_does_prefers_newer_example_values_over_older_ones() {
+        let mut b1 = BenchmarkRaw::default();
+        b1.data
+            .insert("command".to_string(), Value::String("program".to_string()));
+
+        let mut b2 = BenchmarkRaw::default();
+        b2.data
+            .insert("command".to_string(), Value::String("hello".to_string()));
+
+        let infos = compute_key_infos(&[b1, b2], 1);
+        let i = infos.get("command").expect("should work");
+
+        assert_eq!(
+            i.example_values.get(0),
+            Some(&Value::String("hello".to_string())),
+            "hello should come first because it is saved in the newer benchmark"
+        );
+    }
+
+    #[test]
+    fn show_does_not_produce_example_strings_which_are_too_long() {
+        let mut b1 = BenchmarkRaw::default();
+        b1.data.insert(
+            "command".to_string(),
+            Value::String("program steadfast important message message".to_string()),
+        );
+
+        let mut b2 = BenchmarkRaw::default();
+        b2.data.insert(
+            "command".to_string(),
+            Value::String("hello important important important message message ls s".to_string()),
+        );
+
+        let infos = compute_key_infos(&[b1, b2], 1);
+        let i = infos.get("command").expect("should work");
+
+        assert!(
+            display_example_values(&i.example_values).len() < 120,
+            "one string should be omitted due to max string length constraint"
+        );
     }
 
     #[test]
