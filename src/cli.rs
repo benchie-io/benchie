@@ -1,5 +1,6 @@
-use anyhow::Result;
-use clap::{arg, crate_name, crate_version, Arg, Command};
+use anyhow::{bail, Result};
+use clap::{arg, crate_name, crate_version, Arg, Command, Values};
+use itertools::Itertools;
 use std::collections::HashMap;
 use std::ffi::OsString;
 
@@ -17,6 +18,7 @@ pub enum CliCommand {
         row: Option<String>,
         col: Option<String>,
         metric: Option<String>,
+        filter: HashMap<String, String>,
     },
 }
 
@@ -46,6 +48,12 @@ pub fn parse_arguments(args: &[OsString]) -> Result<CliCommand> {
             Command::new(sub_commands::SHOW)
                 .about("Shows benchmarking results")
                 .arg(
+                    arg!(--filter <PREDICATE> "The predicate to use to filter benchmarks")
+                        .required(false)
+                        .multiple_occurrences(true)
+                        .validator(is_key_value_pair),
+                )
+                .arg(
                     arg!(--row <ROW> "The row to display")
                         .short('r')
                         .required(false)
@@ -72,15 +80,13 @@ pub fn parse_arguments(args: &[OsString]) -> Result<CliCommand> {
             row: sub_commands.value_of("row").map(str::to_string),
             col: sub_commands.value_of("col").map(str::to_string),
             metric: sub_commands.value_of("metric").map(str::to_string),
+            filter: parse_key_value_pairs(sub_commands.values_of("filter"))?,
         },
         m => {
             if let Some(command) = matches.values_of("command") {
                 let command: Vec<String> = command.into_iter().map(|s| s.to_owned()).collect();
-                let mut tags = HashMap::<String, String>::new();
 
-                if let Some(tags_raw) = matches.values_of("tag") {
-                    tags.extend(tags_raw.into_iter().map(parse_key_value_pair));
-                }
+                let tags = parse_key_value_pairs(matches.values_of("tag"))?;
 
                 CliCommand::Benchmark { command, tags }
             } else {
@@ -107,6 +113,18 @@ fn is_key_value_pair(v: &str) -> Result<(), String> {
     match (kv.get(0), kv.get(1)) {
         (Some(key), Some(value)) if !key.is_empty() && !value.is_empty() => Ok(()),
         _ => Err(String::from("tag has to be a <key>=<value> pair")),
+    }
+}
+
+fn parse_key_value_pairs(it: Option<Values>) -> Result<HashMap<String, String>> {
+    let pairs: Vec<_> = it.map_or(vec![], |it| it.map(parse_key_value_pair).collect());
+
+    let unique_keys = pairs.iter().unique_by(|(key, _)| key).count();
+
+    if pairs.len() != unique_keys {
+        bail!("")
+    } else {
+        Ok(pairs.into_iter().collect())
     }
 }
 
@@ -164,7 +182,8 @@ mod test {
                 Ok(CliCommand::Show {
                     row: None,
                     col: None,
-                    metric: None
+                    metric: None,
+                    filter: _
                 })
             ),
             "should succeed to parse show subcommand"
@@ -184,6 +203,7 @@ mod test {
                 row,
                 col: _,
                 metric,
+                filter: _,
             }) => {
                 assert_eq!(row.unwrap(), "test_row");
                 assert_eq!(metric.unwrap(), "test_metric");
@@ -226,7 +246,12 @@ mod test {
             os("test_column"),
             os("test_metric"),
         ]) {
-            Ok(CliCommand::Show { row, col, metric }) => {
+            Ok(CliCommand::Show {
+                row,
+                col,
+                metric,
+                filter: _,
+            }) => {
                 assert_eq!(row.unwrap(), "test_row");
                 assert_eq!(col.unwrap(), "test_column");
                 assert_eq!(metric.unwrap(), "test_metric");
@@ -249,6 +274,42 @@ mod test {
                 assert_eq!(tags.len(), 2);
             }
             _ => panic!("multiple tags should be allowed"),
+        }
+    }
+
+    #[test]
+    fn two_filters_with_same_key_fail() {
+        let result = parse_arguments(&[
+            os("benchie"),
+            os("show"),
+            os("--filter"),
+            os("key=value"),
+            os("--filter"),
+            os("key=value2"),
+        ]);
+
+        assert!(
+            result.is_err(),
+            "two filters for the same key are not allowed at the moment"
+        );
+    }
+
+    #[test]
+    fn multiple_filter_arguments_are_allowed() {
+        match parse_arguments(&[
+            os("benchie"),
+            os("show"),
+            os("--filter"),
+            os("key=value"),
+            os("--filter"),
+            os("key2=value2"),
+        ]) {
+            Ok(CliCommand::Show { filter, .. }) => {
+                assert_eq!(filter.len(), 2);
+                assert_eq!(filter.get("key"), Some(&"value".to_string()));
+                assert_eq!(filter.get("key2"), Some(&"value2".to_string()));
+            }
+            _ => panic!("tag argument with command should work"),
         }
     }
 }
