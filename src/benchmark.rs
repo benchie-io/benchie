@@ -1,10 +1,12 @@
 use crate::append_benchmark;
 use crate::git::{read_git_info, GitError};
 use crate::system::System;
+use crate::utils::{is_key_value_pair, parse_key_value_pair};
 use crate::Value;
 use crate::{value, GitInfo};
-use anyhow::{ensure, Context, Result};
+use anyhow::{bail, ensure, Context, Result};
 use chrono::prelude::*;
+use itertools::Itertools;
 use libc::{
     c_char, c_int, close, pid_t, pipe, posix_spawn_file_actions_addclose,
     posix_spawn_file_actions_adddup2, posix_spawn_file_actions_init, posix_spawn_file_actions_t,
@@ -137,6 +139,36 @@ impl TryFrom<HashMap<String, Value>> for ExecutionResult {
     }
 }
 
+fn parse_tags_from_stdout(output: &str) -> Result<HashMap<String, String>> {
+    let mut pairs = vec![];
+
+    for line in output.split('\n') {
+        if line.starts_with("@benchie") {
+            if let Some((_, kv)) = line.split_once(' ') {
+                if is_key_value_pair(kv).is_err() {
+                    println!("warning: invalid key-value pair format: \"{kv}\"");
+                } else {
+                    let (k, v) = parse_key_value_pair(kv);
+                    pairs.push((k, v));
+                }
+            }
+        }
+    }
+
+    let unique_keys = pairs.iter().unique_by(|(key, _)| key).count();
+
+    if pairs.len() != unique_keys {
+        let duplicates: Vec<_> = pairs.iter().duplicates_by(|(key, _)| key).collect();
+        // TODO: should this be a warning?
+        bail!(
+            "found multiple duplicates when checking key value pairs: {:?}",
+            duplicates
+        )
+    } else {
+        Ok(pairs.into_iter().collect())
+    }
+}
+
 pub fn benchmark(command_and_flags: &[String], tags: &HashMap<String, String>) -> Result<()> {
     let git_info = match read_git_info() {
         Ok(info) => {
@@ -154,7 +186,17 @@ pub fn benchmark(command_and_flags: &[String], tags: &HashMap<String, String>) -
         }
     };
 
-    let result = execute_and_measure(command_and_flags).context("failed to execute command")?;
+    let (result, cmd_tags) =
+        execute_and_measure(command_and_flags).context("failed to execute command")?;
+
+    tags.iter().for_each(|(key, _)| {
+        if cmd_tags.contains_key(key.as_str()) {
+            println!("warning: you are overwriting the tag with key \"{key}\"")
+        }
+    });
+
+    let mut merged_tags = tags.clone();
+    merged_tags.extend(cmd_tags);
 
     println!("Running \"{}\" took:", command_and_flags.join(" "));
     println!(
@@ -163,15 +205,20 @@ pub fn benchmark(command_and_flags: &[String], tags: &HashMap<String, String>) -
     );
 
     if result.status_code != 0 {
-        todo!("save result if execution was not successfully? (status != 0)");
+        println!(
+            "warning: benchmarked program exited with status code {}",
+            result.status_code
+        );
     }
 
-    let benchmark = Benchmark::new(command_and_flags, &result, &git_info, tags);
+    let benchmark = Benchmark::new(command_and_flags, &result, &git_info, &merged_tags);
 
     append_benchmark(&benchmark).context("unable to save new benchmark")
 }
 
-pub fn execute_and_measure(command_and_flags: &[String]) -> Result<ExecutionResult> {
+pub fn execute_and_measure(
+    command_and_flags: &[String],
+) -> Result<(ExecutionResult, HashMap<String, String>)> {
     ensure!(
         !command_and_flags.is_empty(),
         "command can not be empty for benchmarking"
@@ -262,14 +309,19 @@ pub fn execute_and_measure(command_and_flags: &[String]) -> Result<ExecutionResu
         let mut cmd_output = String::new();
         f.read_to_string(&mut cmd_output)?;
 
+        let tags_from_stdout = parse_tags_from_stdout(&cmd_output)?;
+
         print!("{}", cmd_output);
 
-        Ok(ExecutionResult {
-            user_time,
-            system_time,
-            real_time,
-            status_code: status.assume_init().into(),
-        })
+        Ok((
+            ExecutionResult {
+                user_time,
+                system_time,
+                real_time,
+                status_code: status.assume_init().into(),
+            },
+            tags_from_stdout,
+        ))
     }
 }
 
