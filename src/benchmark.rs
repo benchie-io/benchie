@@ -1,7 +1,10 @@
+use crate::append_benchmark;
 use crate::git::{read_git_info, GitError};
+use crate::system::System;
 use crate::Value;
-use crate::{append_benchmark, Benchmark};
+use crate::{value, GitInfo};
 use anyhow::{ensure, Context, Result};
+use chrono::prelude::*;
 use libc::{
     c_char, c_int, pid_t, posix_spawn_file_actions_init, posix_spawn_file_actions_t,
     posix_spawnattr_init, posix_spawnattr_t, posix_spawnp, rusage, timeval, wait4,
@@ -13,11 +16,66 @@ use std::ffi::CString;
 use std::mem::MaybeUninit;
 use std::time::{Duration, Instant};
 
+#[derive(Serialize, Default, Deserialize, Debug, Clone)]
+pub struct BenchmarkRaw {
+    #[serde(flatten)]
+    pub data: HashMap<String, Value>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Benchmark {
+    #[serde(with = "value")]
+    command: String,
+
+    #[serde(with = "value")]
+    created_at: DateTime<Utc>,
+
+    #[serde(flatten)]
+    git: Option<GitInfo>,
+
+    #[serde(flatten)]
+    system: System,
+
+    #[serde(flatten)]
+    result: ExecutionResult,
+
+    #[serde(flatten)]
+    tags: HashMap<String, Value>,
+}
+
+impl Benchmark {
+    pub fn new(
+        command: &[String],
+        result: &ExecutionResult,
+        git: &Option<GitInfo>,
+        tags: &HashMap<String, String>,
+    ) -> Self {
+        Self {
+            command: command.join(" "),
+            created_at: Utc::now(),
+            git: git.clone(),
+            system: System::default(),
+            result: result.clone(),
+            tags: tags
+                .iter()
+                .map(|(key, value)| (key.clone(), value.into()))
+                .collect(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ExecutionResult {
+    #[serde(with = "value")]
     pub user_time: Duration,
+
+    #[serde(with = "value")]
     pub system_time: Duration,
+
+    #[serde(with = "value")]
     pub real_time: Duration,
+
+    #[serde(with = "value")]
     pub status_code: i64,
 }
 
