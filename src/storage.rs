@@ -42,6 +42,7 @@ fn write_to_storage<T: Serialize>(data: &Data<T>) -> Result<()> {
     Ok(())
 }
 
+/// loads benchmarks from the file in order from oldest to newest.
 pub fn load_all_benchmarks() -> Result<Vec<BenchmarkRaw>> {
     read_from_storage::<Data<BenchmarkRaw>>().map(|d| d.benchmarks)
 }
