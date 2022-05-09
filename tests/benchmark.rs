@@ -8,7 +8,7 @@ fn test_execution_and_measurement_basic_functionality() {
         result.is_ok(),
         "execution and measurement for \"pwd\" should succeed"
     );
-    let result = result.unwrap();
+    let result = result.unwrap().0;
 
     // TODO: check why this fails in CI pipeline (linux)
     // assert!(

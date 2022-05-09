@@ -1,12 +1,15 @@
 use crate::append_benchmark;
 use crate::git::{read_git_info, GitError};
 use crate::system::System;
+use crate::utils::{is_key_value_pair, parse_key_value_pair};
 use crate::Value;
 use crate::{value, GitInfo};
-use anyhow::{ensure, Context, Result};
+use anyhow::{bail, ensure, Context, Result};
 use chrono::prelude::*;
+use itertools::Itertools;
 use libc::{
-    c_char, c_int, pid_t, posix_spawn_file_actions_init, posix_spawn_file_actions_t,
+    c_char, c_int, close, pid_t, pipe, posix_spawn_file_actions_addclose,
+    posix_spawn_file_actions_adddup2, posix_spawn_file_actions_init, posix_spawn_file_actions_t,
     posix_spawnattr_init, posix_spawnattr_t, posix_spawnp, rusage, timeval, wait4,
 };
 use serde::{Deserialize, Serialize};
@@ -15,6 +18,7 @@ use std::env;
 use std::ffi::CString;
 use std::mem::MaybeUninit;
 use std::time::{Duration, Instant};
+use std::{fs::File, io::Read, os::unix::io::FromRawFd};
 
 #[derive(Serialize, Default, Deserialize, Debug, Clone)]
 pub struct BenchmarkRaw {
@@ -135,6 +139,36 @@ impl TryFrom<HashMap<String, Value>> for ExecutionResult {
     }
 }
 
+fn parse_tags_from_stdout(output: &str) -> Result<HashMap<String, String>> {
+    let mut pairs = vec![];
+
+    for line in output.split('\n') {
+        if line.starts_with("@benchie") {
+            if let Some((_, kv)) = line.split_once(' ') {
+                if is_key_value_pair(kv).is_err() {
+                    println!("warning: invalid key-value pair format: \"{kv}\"");
+                } else {
+                    let (k, v) = parse_key_value_pair(kv);
+                    pairs.push((k, v));
+                }
+            }
+        }
+    }
+
+    let unique_keys = pairs.iter().unique_by(|(key, _)| key).count();
+
+    if pairs.len() != unique_keys {
+        let duplicates: Vec<_> = pairs.iter().duplicates_by(|(key, _)| key).collect();
+        // TODO: should this be a warning?
+        bail!(
+            "found multiple duplicates when checking key value pairs: {:?}",
+            duplicates
+        )
+    } else {
+        Ok(pairs.into_iter().collect())
+    }
+}
+
 pub fn benchmark(command_and_flags: &[String], tags: &HashMap<String, String>) -> Result<()> {
     let git_info = match read_git_info() {
         Ok(info) => {
@@ -152,7 +186,17 @@ pub fn benchmark(command_and_flags: &[String], tags: &HashMap<String, String>) -
         }
     };
 
-    let result = execute_and_measure(command_and_flags).context("failed to execute command")?;
+    let (result, cmd_tags) =
+        execute_and_measure(command_and_flags).context("failed to execute command")?;
+
+    tags.iter().for_each(|(key, _)| {
+        if cmd_tags.contains_key(key.as_str()) {
+            println!("warning: you are overwriting the tag with key \"{key}\"")
+        }
+    });
+
+    let mut merged_tags = tags.clone();
+    merged_tags.extend(cmd_tags);
 
     println!("Running \"{}\" took:", command_and_flags.join(" "));
     println!(
@@ -161,15 +205,20 @@ pub fn benchmark(command_and_flags: &[String], tags: &HashMap<String, String>) -
     );
 
     if result.status_code != 0 {
-        todo!("save result if execution was not successfully? (status != 0)");
+        println!(
+            "warning: benchmarked program exited with status code {}",
+            result.status_code
+        );
     }
 
-    let benchmark = Benchmark::new(command_and_flags, &result, &git_info, tags);
+    let benchmark = Benchmark::new(command_and_flags, &result, &git_info, &merged_tags);
 
     append_benchmark(&benchmark).context("unable to save new benchmark")
 }
 
-pub fn execute_and_measure(command_and_flags: &[String]) -> Result<ExecutionResult> {
+pub fn execute_and_measure(
+    command_and_flags: &[String],
+) -> Result<(ExecutionResult, HashMap<String, String>)> {
     ensure!(
         !command_and_flags.is_empty(),
         "command can not be empty for benchmarking"
@@ -198,9 +247,28 @@ pub fn execute_and_measure(command_and_flags: &[String]) -> Result<ExecutionResu
     let envp = create_null_terminated(&envs);
     let argv = create_null_terminated(&command_and_flags);
 
+    let mut pipe_file_descriptors = [0, 0];
+
     unsafe {
         ensure!(posix_spawn_file_actions_init(file_actions.as_mut_ptr()) == 0);
         ensure!(posix_spawnattr_init(spawnattr.as_mut_ptr()) == 0);
+
+        ensure!(pipe(pipe_file_descriptors.as_mut_ptr()) != -1);
+
+        // tell spawned process to close unused read end of pipe
+        ensure!(
+            posix_spawn_file_actions_addclose(file_actions.as_mut_ptr(), pipe_file_descriptors[0])
+                == 0
+        );
+
+        // tell spawned process to replace file descriptor 1 (stdout) with write end of the pipe
+        ensure!(
+            posix_spawn_file_actions_adddup2(
+                file_actions.as_mut_ptr(),
+                pipe_file_descriptors[1],
+                1
+            ) == 0
+        );
 
         let now = Instant::now();
 
@@ -212,6 +280,8 @@ pub fn execute_and_measure(command_and_flags: &[String]) -> Result<ExecutionResu
             argv.as_ptr(),
             envp.as_ptr(),
         );
+
+        close(pipe_file_descriptors[1]);
 
         ensure!(
             result == 0,
@@ -235,12 +305,23 @@ pub fn execute_and_measure(command_and_flags: &[String]) -> Result<ExecutionResu
         let user_time = timeval_to_duration(rusage.assume_init().ru_utime)?;
         let system_time = timeval_to_duration(rusage.assume_init().ru_stime)?;
 
-        Ok(ExecutionResult {
-            user_time,
-            system_time,
-            real_time,
-            status_code: status.assume_init().into(),
-        })
+        let mut f = File::from_raw_fd(pipe_file_descriptors[0]);
+        let mut cmd_output = String::new();
+        f.read_to_string(&mut cmd_output)?;
+
+        let tags_from_stdout = parse_tags_from_stdout(&cmd_output)?;
+
+        print!("{}", cmd_output);
+
+        Ok((
+            ExecutionResult {
+                user_time,
+                system_time,
+                real_time,
+                status_code: status.assume_init().into(),
+            },
+            tags_from_stdout,
+        ))
     }
 }
 
