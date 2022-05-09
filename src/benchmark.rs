@@ -6,6 +6,7 @@ use crate::Value;
 use crate::{value, GitInfo};
 use anyhow::{bail, ensure, Context, Result};
 use chrono::prelude::*;
+use colored::*;
 use itertools::Itertools;
 use libc::{
     c_char, c_int, close, pid_t, pipe, posix_spawn_file_actions_addclose,
@@ -146,7 +147,10 @@ fn parse_tags_from_stdout(output: &str) -> Result<HashMap<String, String>> {
         if line.starts_with("@benchie") {
             if let Some((_, kv)) = line.split_once(' ') {
                 if is_key_value_pair(kv).is_err() {
-                    println!("warning: invalid key-value pair format: \"{kv}\"");
+                    println!(
+                        "{}",
+                        format!("warning: invalid key-value pair format: \"{kv}\"").yellow()
+                    );
                 } else {
                     let (k, v) = parse_key_value_pair(kv);
                     pairs.push((k, v));
@@ -173,12 +177,15 @@ pub fn benchmark(command_and_flags: &[String], tags: &HashMap<String, String>) -
     let git_info = match read_git_info() {
         Ok(info) => {
             if info.is_dirty {
-                println!("warning: you have uncommited changed in your repository")
+                println!(
+                    "{}",
+                    "warning: you have uncommitted changed in your repository".yellow()
+                )
             }
             Some(info)
         }
         Err(GitError::NotFound) => {
-            println!("warning: could not find Git repository => no Git information will be saved for your benchmark");
+            println!("{}", "warning: could not find Git repository => no Git information will be saved for your benchmark".yellow());
             None
         }
         Err(error) => {
@@ -191,7 +198,10 @@ pub fn benchmark(command_and_flags: &[String], tags: &HashMap<String, String>) -
 
     tags.iter().for_each(|(key, _)| {
         if cmd_tags.contains_key(key.as_str()) {
-            println!("warning: you are overwriting the tag with key \"{key}\"")
+            println!(
+                "{}",
+                format!("warning: you are overwriting the tag with key \"{key}\"").yellow()
+            )
         }
     });
 
@@ -206,8 +216,12 @@ pub fn benchmark(command_and_flags: &[String], tags: &HashMap<String, String>) -
 
     if result.status_code != 0 {
         println!(
-            "warning: benchmarked program exited with status code {}",
-            result.status_code
+            "{}",
+            format!(
+                "warning: benchmarked program exited with status code {}",
+                result.status_code
+            )
+            .yellow()
         );
     }
 
