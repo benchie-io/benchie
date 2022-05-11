@@ -1,6 +1,6 @@
 [package]
 name = "benchie"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 authors = ["Christian Mösl <christian.moesl@benchie.io>", "Manuel Widmoser <manuel.widmoser@benchie.io>"]
 description = "A benchmarking tool"
