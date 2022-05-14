@@ -14,8 +14,8 @@ pub struct GitInfo {
     #[serde(with = "value")]
     pub commit_message: String,
 
-    #[serde(with = "value")]
-    pub branch: String,
+    #[serde(with = "value", skip_serializing_if = "Option::is_none")]
+    pub branch: Option<String>,
 
     #[serde(with = "value")]
     pub is_dirty: bool,
@@ -53,7 +53,10 @@ impl<'a> Iterator for GitInfoIterator<'a> {
             ),
             2 => (
                 "git_branch".to_string(),
-                Value::String(self.git.branch.clone()),
+                self.git
+                    .branch
+                    .as_ref()
+                    .map_or(Value::None, |ref s| Value::String(s.to_owned().clone())),
             ),
             3 => ("git_is_dirty".to_string(), Value::Bool(self.git.is_dirty)),
             _ => return None,
@@ -67,7 +70,9 @@ impl<'a> Iterator for GitInfoIterator<'a> {
 pub enum GitError {
     #[error("no Git repository found in current directory")]
     NotFound,
-    #[error("unknown Git error")]
+    #[error("Git repository does not have a commit yet")]
+    NoCommit,
+    #[error("unknown error occurred during Git repository discovery")]
     Unknown(#[from] anyhow::Error),
 }
 
@@ -75,7 +80,7 @@ pub fn read_git_info() -> Result<GitInfo, GitError> {
     let repo = discover_repository()?;
 
     let branch = read_current_branch(&repo)?;
-    let commit = read_latest_commit(&repo, &branch)?;
+    let commit = read_head_commit(&repo)?;
     let is_dirty = is_dirty(&repo)?;
 
     let first_line = commit
@@ -102,7 +107,7 @@ fn discover_repository() -> Result<Repository, GitError> {
     })
 }
 
-fn read_current_branch(repo: &Repository) -> Result<String, GitError> {
+fn read_current_branch(repo: &Repository) -> Result<Option<String>, GitError> {
     let branches = repo
         .branches(Some(BranchType::Local))
         .context("failed to read local Git branches from repository")?;
@@ -121,13 +126,13 @@ fn read_current_branch(repo: &Repository) -> Result<String, GitError> {
         })
         .next();
 
-    branch_name.ok_or(GitError::NotFound)
+    Ok(branch_name)
 }
 
-fn read_latest_commit<'a>(repo: &'a Repository, branch_name: &str) -> Result<Commit<'a>> {
-    repo.revparse_single(branch_name)
-        .and_then(|object| object.peel_to_commit())
-        .context("failed to read latest commit")
+fn read_head_commit(repo: &Repository) -> Result<Commit, GitError> {
+    repo.head()
+        .and_then(|h| h.peel_to_commit())
+        .map_err(|_| GitError::NoCommit)
 }
 
 fn is_dirty(repo: &Repository) -> Result<bool> {

@@ -179,17 +179,25 @@ pub fn benchmark(command_and_flags: &[String], tags: &HashMap<String, String>) -
             if info.is_dirty {
                 println!(
                     "{}",
-                    "warning: you have uncommitted changed in your repository".yellow()
+                    "warning: you have uncommitted changes in your repository".yellow()
                 )
             }
             Some(info)
         }
-        Err(GitError::NotFound) => {
-            println!("{}", "warning: could not find Git repository => no Git information will be saved for your benchmark".yellow());
-            None
+        Err(GitError::Unknown(error)) => {
+            return Err(error)
+                .context("unknown error during reading of Git repository information");
         }
-        Err(error) => {
-            return Err(error).context("error during reading of Git repository information");
+        Err(known_error) => {
+            println!(
+                "{}",
+                format!(
+                    "warning: {} => no Git information will be saved for your benchmark",
+                    known_error
+                )
+                .yellow()
+            );
+            None
         }
     };
 
