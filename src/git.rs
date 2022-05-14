@@ -1,5 +1,4 @@
 use crate::value;
-use crate::Value;
 use anyhow::{anyhow, ensure, Context, Result};
 use git2::{BranchType, Commit, Repository, StatusOptions, Statuses};
 use serde::{Deserialize, Serialize};
@@ -19,51 +18,6 @@ pub struct GitInfo {
 
     #[serde(with = "value")]
     pub is_dirty: bool,
-}
-
-impl<'a> IntoIterator for &'a GitInfo {
-    type Item = (String, Value);
-    type IntoIter = GitInfoIterator<'a>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        GitInfoIterator {
-            git: self,
-            index: 0,
-        }
-    }
-}
-
-pub struct GitInfoIterator<'a> {
-    git: &'a GitInfo,
-    index: usize,
-}
-
-impl<'a> Iterator for GitInfoIterator<'a> {
-    type Item = (String, Value);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let result = match self.index {
-            0 => (
-                "git_commit_hash".to_string(),
-                Value::String(self.git.commit_id.clone()),
-            ),
-            1 => (
-                "git_commit_msg".to_string(),
-                Value::String(self.git.commit_message.clone()),
-            ),
-            2 => (
-                "git_branch".to_string(),
-                self.git
-                    .branch
-                    .as_ref()
-                    .map_or(Value::None, |ref s| Value::String(s.to_owned().clone())),
-            ),
-            3 => ("git_is_dirty".to_string(), Value::Bool(self.git.is_dirty)),
-            _ => return None,
-        };
-        self.index += 1;
-        Some(result)
-    }
 }
 
 #[derive(Error, Debug)]

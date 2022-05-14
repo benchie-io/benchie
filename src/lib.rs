@@ -4,7 +4,6 @@ mod git;
 mod show;
 mod storage;
 mod system;
-mod table;
 mod utils;
 mod value;
 
