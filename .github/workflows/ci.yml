@@ -46,7 +46,7 @@ jobs:
         with:
           profile: minimal
           toolchain: 1.60.0
-          components: rustfmt, clippy
+          components: rustfmt, clippy, llvm-tools-preview
           override: true
 
       - name: Check Github Permissions
@@ -99,6 +99,38 @@ jobs:
 
       - name: Test
         uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: "-C instrument-coverage"
+          LLVM_PROFILE_FILE: "target/debug/coverage/benchie-%m.profraw"
         with:
           command: test
-          args: --locked
+          args: --tests --locked
+
+      - name: Code Coverage Report
+        run: |
+          cargo install --force cargo-binutils cargo-llvm-codecov-converter
+          cargo profdata -- merge -sparse target/debug/coverage/benchie-*.profraw -o target/debug/coverage/benchie.profdata
+          cargo cov -- export \
+          $( \
+            for file in \
+              $( \
+                RUSTFLAGS="-C instrument-coverage" \
+                  cargo test --tests --no-run --message-format=json \
+                  | jq -r "select(.profile.test == true) | .filenames[]" \
+                  | grep -v dSYM - \
+              ); \
+              do \
+              printf "%s %s " -object $file; \
+            done \
+          ) \
+          --instr-profile=target/debug/coverage/benchie.profdata \
+          --ignore-filename-regex=/.cargo/registry \
+          --ignore-filename-regex=/tests/ \
+          --ignore-filename-regex=rustc \
+          --skip-functions \
+          | cargo llvm-codecov-converter > target/debug/coverage/report.txt
+
+      - uses: codecov/codecov-action@v3
+        with:
+          files: target/debug/coverage/report.txt
+          verbose: true

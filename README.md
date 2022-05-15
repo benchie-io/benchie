@@ -1,6 +1,9 @@
 <div align="center">
   <h1>benchie</h1>
   <a href="https://github.com/benchie-io/benchie/actions"><img src="https://img.shields.io/github/workflow/status/benchie-io/benchie/CI" /></a>
+  <a href="https://codecov.io/gh/benchie-io/benchie">
+    <img src="https://codecov.io/gh/benchie-io/benchie/branch/main/graph/badge.svg?token=K4WQDNCN9F"/>
+  </a>
   <a href="https://crates.io/crates/benchie"><img src="https://img.shields.io/crates/v/benchie.svg" /></a>
   <a href="https://docs.rs/benchie"><img src="https://docs.rs/benchie/badge.svg" /></a>
   <img src="https://img.shields.io/badge/Rust-v1.60.0-yellow" />
