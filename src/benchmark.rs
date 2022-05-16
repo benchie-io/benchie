@@ -84,62 +84,6 @@ pub struct ExecutionResult {
     pub status_code: i64,
 }
 
-impl From<ExecutionResult> for HashMap<String, Value> {
-    fn from(result: ExecutionResult) -> Self {
-        let mut map = Self::new();
-        map.insert("user_time".to_string(), Value::Duration(result.user_time));
-        map.insert(
-            "system_time".to_string(),
-            Value::Duration(result.system_time),
-        );
-        map.insert("real_time".to_string(), Value::Duration(result.real_time));
-        map.insert(
-            "status_code".to_string(),
-            Value::Integer(result.status_code),
-        );
-
-        map
-    }
-}
-
-impl TryFrom<HashMap<String, Value>> for ExecutionResult {
-    type Error = ();
-
-    fn try_from(map: HashMap<String, Value>) -> std::result::Result<Self, Self::Error> {
-        let v = map.get("user_time").ok_or(())?;
-
-        let user_time = match v {
-            Value::Duration(dur) => dur,
-            _ => return Err(()),
-        };
-
-        let v = map.get("system_time").ok_or(())?;
-        let system_time = match v {
-            Value::Duration(dur) => dur,
-            _ => return Err(()),
-        };
-
-        let v = map.get("real_time").ok_or(())?;
-        let real_time = match v {
-            Value::Duration(dur) => dur,
-            _ => return Err(()),
-        };
-
-        let v = map.get("status").ok_or(())?;
-        let status_code = match v {
-            Value::Integer(int) => int,
-            _ => return Err(()),
-        };
-
-        Ok(Self {
-            user_time: *user_time,
-            system_time: *system_time,
-            real_time: *real_time,
-            status_code: *status_code,
-        })
-    }
-}
-
 fn parse_tags_from_stdout(output: &str) -> Result<HashMap<String, String>> {
     let mut pairs = vec![];
 
@@ -179,17 +123,25 @@ pub fn benchmark(command_and_flags: &[String], tags: &HashMap<String, String>) -
             if info.is_dirty {
                 println!(
                     "{}",
-                    "warning: you have uncommitted changed in your repository".yellow()
+                    "warning: you have uncommitted changes in your repository".yellow()
                 )
             }
             Some(info)
         }
-        Err(GitError::NotFound) => {
-            println!("{}", "warning: could not find Git repository => no Git information will be saved for your benchmark".yellow());
-            None
+        Err(GitError::Unknown(error)) => {
+            return Err(error)
+                .context("unknown error during reading of Git repository information");
         }
-        Err(error) => {
-            return Err(error).context("error during reading of Git repository information");
+        Err(known_error) => {
+            println!(
+                "{}",
+                format!(
+                    "warning: {} => no Git information will be saved for your benchmark",
+                    known_error
+                )
+                .yellow()
+            );
+            None
         }
     };
 

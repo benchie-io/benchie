@@ -124,6 +124,50 @@ impl From<&DateTime<Utc>> for Value {
     }
 }
 
+const OPTION_SERIALIZATION_ERROR: &str = "trying to serialize an optional value with none is not allowed => try adding \"skip_serializing_if\"";
+
+impl From<&Option<bool>> for Value {
+    fn from(v: &Option<bool>) -> Self {
+        v.as_ref().expect(OPTION_SERIALIZATION_ERROR).into()
+    }
+}
+
+impl From<&Option<i64>> for Value {
+    fn from(v: &Option<i64>) -> Self {
+        v.as_ref().expect(OPTION_SERIALIZATION_ERROR).into()
+    }
+}
+
+impl From<&Option<f64>> for Value {
+    fn from(v: &Option<f64>) -> Self {
+        v.as_ref().expect(OPTION_SERIALIZATION_ERROR).into()
+    }
+}
+
+impl From<&Option<String>> for Value {
+    fn from(v: &Option<String>) -> Self {
+        v.as_ref().expect(OPTION_SERIALIZATION_ERROR).into()
+    }
+}
+
+impl From<&Option<ByteSize>> for Value {
+    fn from(v: &Option<ByteSize>) -> Self {
+        v.as_ref().expect(OPTION_SERIALIZATION_ERROR).into()
+    }
+}
+
+impl From<&Option<Duration>> for Value {
+    fn from(v: &Option<Duration>) -> Self {
+        v.as_ref().expect(OPTION_SERIALIZATION_ERROR).into()
+    }
+}
+
+impl From<&Option<DateTime<Utc>>> for Value {
+    fn from(v: &Option<DateTime<Utc>>) -> Self {
+        v.as_ref().expect(OPTION_SERIALIZATION_ERROR).into()
+    }
+}
+
 impl TryInto<DateTime<Utc>> for Value {
     type Error = anyhow::Error;
 
@@ -186,6 +230,17 @@ impl TryInto<Duration> for Value {
         match self {
             Value::Duration(v) => Ok(v),
             _ => Err(anyhow!("failed to parse {:?} into a Duration", self)),
+        }
+    }
+}
+
+impl TryInto<Option<String>> for Value {
+    type Error = anyhow::Error;
+
+    fn try_into(self) -> Result<Option<String>, Self::Error> {
+        match self {
+            Value::String(v) => Ok(Some(v)),
+            _ => Err(anyhow!("failed to parse {:?} into a Option<String>", self)),
         }
     }
 }

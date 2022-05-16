@@ -142,7 +142,7 @@ fn create_benchmark() -> Benchmark {
     let info = GitInfo {
         commit_id: "adfadsfasd".to_string(),
         commit_message: "hello commit".to_string(),
-        branch: "master".to_string(),
+        branch: Some("master".to_string()),
         is_dirty: false,
     };
 

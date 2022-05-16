@@ -1,5 +1,4 @@
 use crate::value;
-use crate::Value;
 use bytesize::ByteSize;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -62,70 +61,6 @@ impl Default for System {
                 .unwrap_or("not found")
                 .to_owned(),
         }
-    }
-}
-
-impl<'a> IntoIterator for &'a System {
-    type Item = (String, Value);
-    type IntoIter = SystemIterator<'a>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        SystemIterator {
-            system: self,
-            index: 0,
-        }
-    }
-}
-
-pub struct SystemIterator<'a> {
-    system: &'a System,
-    index: usize,
-}
-
-impl<'a> Iterator for SystemIterator<'a> {
-    type Item = (String, Value);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let result = match self.index {
-            0 => (
-                "total_memory".to_string(),
-                Value::ByteSize(self.system.total_memory),
-            ),
-            1 => (
-                "used_memory".to_string(),
-                Value::ByteSize(self.system.used_memory),
-            ),
-            2 => (
-                "total_swap".to_string(),
-                Value::ByteSize(self.system.total_swap),
-            ),
-            3 => (
-                "used_swap".to_string(),
-                Value::ByteSize(self.system.used_swap),
-            ),
-            4 => ("cores".to_string(), Value::Integer(self.system.cores)),
-            5 => ("os".to_string(), Value::String(self.system.os.clone())),
-            6 => (
-                "os_family".to_string(),
-                Value::String(self.system.os_family.clone()),
-            ),
-            7 => (
-                "os_version".to_string(),
-                Value::String(self.system.os_version.clone()),
-            ),
-            8 => (
-                "kernel_version".to_string(),
-                Value::String(self.system.kernel_version.clone()),
-            ),
-            9 => ("arch".to_string(), Value::String(self.system.arch.clone())),
-            10 => (
-                "benchie_version".to_string(),
-                Value::String(self.system.benchie_version.clone()),
-            ),
-            _ => return None,
-        };
-        self.index += 1;
-        Some(result)
     }
 }
 

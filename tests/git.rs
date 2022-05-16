@@ -26,7 +26,7 @@ fn git_info_of_fresh_git_repo() {
 
         let result = read_git_info();
 
-        assert!(matches!(result, Err(GitError::NotFound)));
+        assert!(matches!(result, Err(GitError::NoCommit)));
     });
 }
 
@@ -83,6 +83,38 @@ fn git_info_of_repo_with_commit_history() {
         );
         assert_eq!(
             info.commit_message, "update",
+            "verify that we get the latest commit message"
+        );
+    });
+}
+
+#[test]
+#[serial]
+fn git_info_if_repo_is_not_at_head_commit() {
+    with_temp_dir(|dir| {
+        build_git_repo(dir.path());
+        let _ = fs::write("./README.md", "# Header and new content");
+
+        commit(&["README.md"], "update");
+
+        let _ = Command::new("git")
+            .args(["checkout", "HEAD~1"])
+            .output()
+            .expect("failed to execute process");
+
+        let result = read_git_info();
+
+        assert!(result.is_ok());
+
+        let info = result.unwrap();
+        assert!(!info.is_dirty);
+        assert_eq!(
+            info.commit_id.len(),
+            40,
+            "valid commit hash is 40 chars long"
+        );
+        assert_eq!(
+            info.commit_message, "initial commit",
             "verify that we get the latest commit message"
         );
     });
