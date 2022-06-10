@@ -1,11 +1,13 @@
 mod common;
 
-use crate::common::with_temp_dir;
+use crate::common::{build_git_repo, with_temp_dir};
 use benchie::{append_benchmark, load_all_benchmarks, Benchmark, ExecutionResult, GitInfo, Value};
 use serial_test::serial;
 use std::collections::HashMap;
+use std::env::set_current_dir;
 use std::fs;
 use std::fs::create_dir;
+use std::path::Path;
 use std::time::Duration;
 
 #[test]
@@ -129,6 +131,44 @@ fn should_save_tags_in_benchmark() {
     })
 }
 
+#[test]
+#[serial]
+fn should_use_git_repo_as_base_path_if_repo_discovered() {
+    with_temp_dir(|dir| {
+        build_git_repo(dir.path());
+
+        let subpath = dir.path().join("something");
+        let _ = create_dir(&subpath);
+
+        let _ = set_current_dir(&subpath);
+
+        append_benchmark(&create_benchmark()).expect("should succeed to append a benchmark");
+
+        assert!(
+            dir.path().join(".benchie/data.json").exists(),
+            "should have created a benchie data file in git root"
+        );
+    })
+}
+
+#[test]
+#[serial]
+fn should_use_current_dir_as_base_path_if_repo_can_not_be_found() {
+    with_temp_dir(|dir| {
+        let subpath = dir.path().join("something");
+        let _ = create_dir(&subpath);
+
+        let _ = set_current_dir(&subpath);
+
+        append_benchmark(&create_benchmark()).expect("should succeed to append a benchmark");
+
+        assert!(
+            dir.path().join("something/.benchie/data.json").exists(),
+            "should have created a benchie data file in current directory root"
+        );
+    })
+}
+
 fn create_execution_result() -> ExecutionResult {
     ExecutionResult {
         real_time: Duration::from_secs(1),
@@ -144,6 +184,7 @@ fn create_benchmark() -> Benchmark {
         commit_message: "hello commit".to_string(),
         branch: Some("master".to_string()),
         is_dirty: false,
+        path: Path::new("bla").to_path_buf(),
     };
 
     let mut tags = HashMap::new();

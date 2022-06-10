@@ -339,6 +339,7 @@ mod test {
             "if one key value pair is missing, the benchmark should get filtered out"
         );
     }
+
     #[test]
     fn remove_benchmark_with_wrong_value_in_filter() {
         let mut benchmark = BenchmarkRaw::default();

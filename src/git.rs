@@ -18,6 +18,9 @@ pub struct GitInfo {
 
     #[serde(with = "value")]
     pub is_dirty: bool,
+
+    #[serde(skip)]
+    pub path: PathBuf,
 }
 
 #[derive(Error, Debug)]
@@ -33,21 +36,18 @@ pub enum GitError {
 pub fn read_git_info() -> Result<GitInfo, GitError> {
     let repo = discover_repository()?;
 
+    let path = repository_path(&repo)?;
     let branch = read_current_branch(&repo)?;
-    let commit = read_head_commit(&repo)?;
     let is_dirty = is_dirty(&repo)?;
 
-    let first_line = commit
-        .message()
-        .and_then(|msg| msg.split('\n').next())
-        .unwrap_or("")
-        .to_owned();
+    let (commit_id, commit_message) = read_head_commit(&repo).map(commit_to_details)?;
 
     Ok(GitInfo {
-        commit_id: commit.id().to_string(),
-        commit_message: first_line,
+        commit_id,
+        commit_message,
         branch,
         is_dirty,
+        path,
     })
 }
 
@@ -59,6 +59,13 @@ fn discover_repository() -> Result<Repository, GitError> {
             GitError::Unknown(anyhow!(error))
         }
     })
+}
+
+fn repository_path(repo: &Repository) -> Result<PathBuf, GitError> {
+    repo.path()
+        .parent()
+        .map(|p| p.to_path_buf())
+        .ok_or(GitError::NotFound)
 }
 
 fn read_current_branch(repo: &Repository) -> Result<Option<String>, GitError> {
@@ -87,6 +94,17 @@ fn read_head_commit(repo: &Repository) -> Result<Commit, GitError> {
     repo.head()
         .and_then(|h| h.peel_to_commit())
         .map_err(|_| GitError::NoCommit)
+}
+
+fn commit_to_details(commit: Commit) -> (String, String) {
+    let commit_id = commit.id().to_string();
+    let first_line = commit
+        .message()
+        .and_then(|msg| msg.split('\n').next())
+        .unwrap_or("")
+        .to_owned();
+
+    (commit_id, first_line)
 }
 
 fn is_dirty(repo: &Repository) -> Result<bool> {

@@ -1,11 +1,11 @@
 mod common;
 
+use crate::common::{build_git_repo, commit};
 use benchie::{read_git_info, GitError};
 use common::with_temp_dir;
 use git2::Repository;
 use serial_test::serial;
 use std::fs;
-use std::path::Path;
 use std::process::Command;
 
 #[test]
@@ -118,28 +118,4 @@ fn git_info_if_repo_is_not_at_head_commit() {
             "verify that we get the latest commit message"
         );
     });
-}
-
-fn build_git_repo<P: AsRef<Path>>(path: P) {
-    let _ = Repository::init(path).unwrap();
-
-    let _ = fs::write("./README.md", "# Header");
-
-    commit(&["README.md"], "initial commit");
-}
-
-fn commit(files: &[&str], msg: &str) {
-    let _ = Command::new("git")
-        .args([&["add"], files].concat())
-        .output()
-        .expect("failed to execute process");
-
-    let _ = Command::new("git")
-        .env("GIT_AUTHOR_NAME", "benchie")
-        .env("GIT_AUTHOR_EMAIL", "benchie@benchie.io")
-        .env("GIT_COMMITTER_NAME", "benchie")
-        .env("GIT_COMMITTER_EMAIL", "benchie@benchie.io")
-        .args(["commit", "-m", msg, "--no-gpg-sign", "--no-verify"])
-        .output()
-        .expect("failed to execute process");
 }
