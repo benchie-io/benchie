@@ -22,7 +22,7 @@ jobs:
 
       - name: Check Github Permissions
         id: check-permissions
-        uses: scherermichael-oss/action-has-permission@master
+        uses: scherermichael-oss/action-has-permission@136e061bfe093832d87f090dd768e14e27a740d3
         with:
           required-permission: write
         env:
@@ -48,14 +48,6 @@ jobs:
           toolchain: 1.61.0
           components: rustfmt, clippy, llvm-tools-preview
           override: true
-
-      - name: Check Github Permissions
-        id: check-permissions
-        uses: scherermichael-oss/action-has-permission@master
-        with:
-          required-permission: write
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache Cargo Dependencies
         uses: actions/cache@v3

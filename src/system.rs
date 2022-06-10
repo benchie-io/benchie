@@ -46,7 +46,7 @@ impl Default for System {
             total_swap: ByteSize::kb(system.total_swap()),
             used_swap: ByteSize::kb(system.used_swap()),
             cores: system
-                .processors()
+                .cpus()
                 .len()
                 .try_into()
                 .expect("nobody has that many cores, that this would fail"),
