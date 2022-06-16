@@ -1,0 +1,55 @@
+name: 'Setup for benchie Rust project'
+description: 'Setup for benchie Rust project'
+
+inputs:
+  target:
+    description: 'Rust compiler target triple'
+    required: false
+    default: 'false'
+  toolchain:
+    description: 'Rust toolchain version'
+    required: false
+    default: '1.61.0'
+  components:
+    description: 'Rust components to install'
+    required: false
+    default: 'rustfmt, clippy, llvm-tools-preview'
+  cache:
+    description: 'Defines if cache is used for restoring dependencies'
+    required: false
+    default: 'true'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install rust
+      if: ${{ inputs.target == 'false' }}
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ inputs.toolchain }}
+        components: ${{ inputs.components }}
+        override: true
+
+    - name: Install rust
+      if: ${{ inputs.target != 'false' }}
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ inputs.toolchain }}
+        target: ${{ inputs.target }}
+        components: ${{ inputs.components }}
+        override: true
+
+    - name: Cache Cargo Dependencies
+      if: inputs.cache == 'true'
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-cargo-dependencies
+      with:
+        # cargo cache files are stored in `~/.cargo` on Linux/macOS
+        # source for paths: https://doc.rust-lang.org/cargo/guide/cargo-home.html#caching-the-cargo-home-in-ci
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: benchie-${{ hashFiles('**/Cargo.lock') }}
