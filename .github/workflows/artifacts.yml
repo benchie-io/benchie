@@ -1,0 +1,121 @@
+name: Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The benchie version to build artifacts for"
+        type: string
+        required: true
+  workflow_call:
+    inputs:
+      version:
+        description: "The benchie version to build artifacts for"
+        type: string
+        required: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build Release Artifacts
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, windows-2022, macos-12]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.version }}
+
+      - name: Install Toolchain for Linux (musl)
+        if: startsWith(matrix.os, 'ubuntu')
+        uses: ./.github/actions/setup-rust/
+        with:
+          target: x86_64-unknown-linux-musl
+
+      - name: Install musl tools for Linux
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt update
+          sudo apt install -y musl-tools
+
+      - name: Build for Linux (musl)
+        if: startsWith(matrix.os, 'ubuntu')
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target x86_64-unknown-linux-musl --locked
+
+      - name: Prepare Linux artifact
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          cd target/x86_64-unknown-linux-musl/release
+          zip ./benchie-x86_64-unknown-linux-musl.zip ./benchie
+          echo "ARTIFACT_PATH=target/x86_64-unknown-linux-musl/release/benchie-x86_64-unknown-linux-musl.zip" >> $GITHUB_ENV
+
+      - name: Install Toolchain for macOS (Intel)
+        if: startsWith(matrix.os, 'macos')
+        uses: ./.github/actions/setup-rust/
+        with:
+          target: x86_64-apple-darwin
+
+      - name: Build for macOS (Intel)
+        if: startsWith(matrix.os, 'macos')
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target x86_64-apple-darwin --locked
+
+      - name: Install Toolchain for macOS (Apple)
+        if: startsWith(matrix.os, 'macos')
+        uses: ./.github/actions/setup-rust/
+        with:
+          target: aarch64-apple-darwin
+
+      - name: Build for macOS (Apple)
+        if: startsWith(matrix.os, 'macos')
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target aarch64-apple-darwin --locked
+
+      - name: Create universal binary
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          lipo -create -output benchie \
+            target/x86_64-apple-darwin/release/benchie \
+            target/aarch64-apple-darwin/release/benchie
+          zip ./benchie-apple-darwin.zip ./benchie
+          echo "ARTIFACT_PATH=./benchie-apple-darwin.zip" >> $GITHUB_ENV
+
+      - name: Install Toolchain for Windows (msvc)
+        if: startsWith(matrix.os, 'windows')
+        uses: ./.github/actions/setup-rust/
+        with:
+          target: x86_64-pc-windows-msvc
+
+      - name: Build for Windows (msvc)
+        if: startsWith(matrix.os, 'windows')
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target x86_64-pc-windows-msvc --locked
+
+      - name: Upload artifact to Github Release (Windows)
+        if: startsWith(matrix.os, 'windows')
+        shell: powershell
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd target\x86_64-pc-windows-msvc\release
+          Compress-Archive .\benchie.exe benchie-x86_64-pc-windows-msvc.zip
+          gh release upload 0.4.0 .\benchie-x86_64-pc-windows-msvc.zip --clobber
+
+      - name: Upload artifact to Github Release (macOS & Linux)
+        if: startsWith(matrix.os , 'windows') == false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload 0.4.0 "$ARTIFACT_PATH" --clobber
