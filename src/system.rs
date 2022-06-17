@@ -75,8 +75,8 @@ mod test {
         assert!(s.total_memory.0 > 0);
         assert!(s.used_memory.0 > 0);
         assert!(s.cores > 0);
-        assert!(matches!(s.os.as_str(), "macos" | "windows" | "linux"));
-        assert!(matches!(s.os_family.as_str(), "unix"));
+        assert!(matches!(s.os.as_str(), "macos" | "linux" | "windows"));
+        assert!(matches!(s.os_family.as_str(), "unix" | "windows"));
         assert!(!s.os_version.is_empty());
         assert!(!s.kernel_version.is_empty());
         assert!(matches!(s.arch.as_str(), "aarch64" | "x86_64"));

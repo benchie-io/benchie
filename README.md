@@ -6,7 +6,7 @@
   </a>
   <a href="https://crates.io/crates/benchie"><img src="https://img.shields.io/crates/v/benchie.svg" /></a>
   <a href="https://docs.rs/benchie"><img src="https://docs.rs/benchie/badge.svg" /></a>
-  <img src="https://img.shields.io/badge/Rust-v1.60.0-yellow" />
+  <img src="https://img.shields.io/badge/Rust-v1.61.0-yellow" />
   <img src="https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-brightgreen" />
   <a href="https://github.com/benchie-io/benchie/blob/master/LICENSE"><img src="https://img.shields.io/crates/l/benchie" /></a>
   <br />
