@@ -13,56 +13,17 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  security-scan:
-    name: Security Scan of Dependencies
-    runs-on: ubuntu-20.04
-    if: ${{ false }}  # disable for now
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Check Github Permissions
-        id: check-permissions
-        uses: scherermichael-oss/action-has-permission@136e061bfe093832d87f090dd768e14e27a740d3
-        with:
-          required-permission: write
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # this action needs write permissions for the given GitHub token
-      - uses: actions-rs/audit-check@v1
-        if: ${{ steps.check-permissions.outputs.has-permission }}
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-  build-and-test:
+  ci:
     name: Build and Test
-    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.61.0
-          components: rustfmt, clippy, llvm-tools-preview
-          override: true
-
-      - name: Cache Cargo Dependencies
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-cargo-dependencies
-        with:
-          # cargo cache files are stored in `~/.cargo` on Linux/macOS
-          # source for paths: https://doc.rust-lang.org/cargo/guide/cargo-home.html#caching-the-cargo-home-in-ci
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target
-          key: benchie-${{ hashFiles('**/Cargo.lock') }}
+      - uses: ./.github/actions/setup-rust/
 
       - name: Check Format
         uses: actions-rs/cargo@v1
@@ -70,12 +31,20 @@ jobs:
           command: fmt
           args: -- --check
 
-      - name: Clippy
+      - name: Clippy on Linux
+        if: ${{ contains(matrix.os, 'ubuntu') }}
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-targets -- -D warnings
           name: Clippy
+
+      - name: Clippy on operating systems
+        if: ${{ !contains(matrix.os, 'ubuntu') }}
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all-targets -- -D warnings
 
       - name: Build
         uses: actions-rs/cargo@v1
@@ -99,6 +68,7 @@ jobs:
           args: --tests --locked
 
       - name: Code Coverage Report
+        if: contains(matrix.os, 'ubuntu')
         run: |
           cargo install --force cargo-binutils cargo-llvm-codecov-converter
           cargo profdata -- merge -sparse target/debug/coverage/benchie-*.profraw -o target/debug/coverage/benchie.profdata
@@ -126,3 +96,24 @@ jobs:
         with:
           files: target/debug/coverage/report.txt
           verbose: true
+
+  security-scan:
+    name: Security Scan of Dependencies
+    runs-on: ubuntu-latest
+    if: ${{ false }}  # disable for now
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check Github Permissions
+        id: check-permissions
+        uses: scherermichael-oss/action-has-permission@136e061bfe093832d87f090dd768e14e27a740d3
+        with:
+          required-permission: write
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # this action needs write permissions for the given GitHub token
+      - uses: actions-rs/audit-check@v1
+        if: ${{ steps.check-permissions.outputs.has-permission }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
