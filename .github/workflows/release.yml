@@ -50,7 +50,7 @@ jobs:
           git add Cargo.lock
           git commit --no-verify -m "set release version on CI build [ci skip]"
           git tag "${{ github.event.inputs.version }}"
-          git push --atomic origin main <tag>
+          git push --atomic origin main "${{ github.event.inputs.version }}"
 
       - name: Create Github Release
         env:
