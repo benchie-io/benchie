@@ -17,7 +17,7 @@ inputs:
   cache:
     description: 'Defines if cache is used for restoring dependencies'
     required: false
-    default: 'true'
+    default: 'false'
 
 runs:
   using: "composite"

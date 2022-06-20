@@ -1,7 +1,7 @@
 name: CI
 
 on:
-  push:
+#  push:
 #  schedule:
 #    # trigger weekly at 12am
 #    # this build should run with caches disabled
@@ -24,6 +24,8 @@ jobs:
         uses: actions/checkout@v3
 
       - uses: ./.github/actions/setup-rust/
+        with:
+          cache: true
 
       - name: Check Format
         uses: actions-rs/cargo@v1
