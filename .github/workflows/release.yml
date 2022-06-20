@@ -62,7 +62,9 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
-      - name: Build binary artifact
-        uses: ./.github/workflows/artifacts.yml
-        with:
-          version: ${{ github.event.inputs.version }}
+  artifacts:
+    name: Build Artifacts
+    needs: release
+    uses: ./.github/workflows/artifacts.yml
+    with:
+      version: ${{ github.event.inputs.version }}
