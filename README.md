@@ -27,10 +27,22 @@
 benchie is a simple-to-use CLI tool that benchmarks performance of your processes and organizes the benchmarking results for you.
 
 ## Installation
+benchie ships as a single executable with no dependencies. You can install it using the installers below, or download a release binary from the releases page.
 
+Shell (Mac, Linux):
+```
+curl -fsSL  https://raw.githubusercontent.com/benchie-io/benchie/main/scripts/install.sh | sh
+```
+
+PowerShell (Windows):
+```
+iwr https://raw.githubusercontent.com/benchie-io/benchie/main/scripts/install.ps1 -useb | iex
+```
+
+### Build from Source
 benchie can be built and tested on all major platforms. First install Rust from https://rustup.rs and add it to your path.
 
-#### Install via Package Manager
+#### Install via Cargo
 
 Install the latest version of benchie using Rust's built-in package manager:
 
@@ -38,7 +50,7 @@ Install the latest version of benchie using Rust's built-in package manager:
 $ cargo install benchie --locked
 ```
 
-#### Build from Source
+#### Install via Github
 * Clone this repository
 * Test you toolchain setup by compiling benchie:
   ```bash

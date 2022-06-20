@@ -112,10 +112,10 @@ jobs:
         run: |
           cd target\x86_64-pc-windows-msvc\release
           Compress-Archive .\benchie.exe benchie-x86_64-pc-windows-msvc.zip
-          gh release upload 0.4.0 .\benchie-x86_64-pc-windows-msvc.zip --clobber
+          gh release upload "${{ github.event.inputs.version }}" .\benchie-x86_64-pc-windows-msvc.zip --clobber
 
       - name: Upload artifact to Github Release (macOS & Linux)
         if: startsWith(matrix.os , 'windows') == false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload 0.4.0 "$ARTIFACT_PATH" --clobber
+        run: gh release upload "${{ github.event.inputs.version }}" "$ARTIFACT_PATH" --clobber
