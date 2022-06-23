@@ -60,8 +60,8 @@ $ cargo install benchie --locked
   ```bash
   $ cargo test --locked
   ```
-  
-  
+
+
 ## Usage
 
 ### Benchmark
@@ -70,7 +70,7 @@ In order to benchmark (measure runtime similar to the unix-tool `time`) a proces
 ```bash
 $ benchie [OPTIONS] <COMMAND>
 ```
-where `<COMMAND>` can be any command including command-line arguments. 
+where `<COMMAND>` can be any command including command-line arguments.
 benchie stores additionally some meta information to the benchmark such as information of the commit, timestamps, exit status of the executable, etc.
 Moreover, one can pass various options to the benchmarking process.
 
@@ -122,7 +122,7 @@ which means that we have 2 stored benchmarks, where we tagged one with `algorith
 #### Table View
 To usefully show benchmarking results, benchie provides a one-dimensional or two-dimensional table view.
 For the one-dimensional view, we must provide the `--row` option and a *metric* that we want to display.
-Both, the row and the metric must occur as a key in at least one benchmark. 
+Both, the row and the metric must occur as a key in at least one benchmark.
 To identify occurring keys, use `benchie show`.
 
 As an example, we use `algorithm` as row and `user_time` as metric:

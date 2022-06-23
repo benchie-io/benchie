@@ -1,6 +1,7 @@
 use crate::{load_all_benchmarks, BenchmarkRaw, Value, Values};
 use anyhow::Result;
-use cli_table::{format::Justify, Cell, Style, Table};
+use cli_table::{format::Justify, Cell, Style, Table, TableStruct};
+use itertools::Itertools;
 use std::collections::HashMap;
 
 pub fn show(filter: &HashMap<String, String>) -> Result<()> {
@@ -13,6 +14,7 @@ pub fn show(filter: &HashMap<String, String>) -> Result<()> {
 
     let rows: Vec<_> = key_infos
         .iter()
+        .sorted_by(|a, b| (*a).0.cmp((*b).0))
         .map(|(key, info)| {
             vec![
                 key.cell(),
@@ -115,84 +117,161 @@ fn apply_filter(benchmark: &BenchmarkRaw, filter: &HashMap<String, String>) -> b
     })
 }
 
-pub fn show_1d_table(row: String, metric: String, filter: &HashMap<String, String>) -> Result<()> {
+type Row1d = (String, String);
+
+fn benchmark_to_row(row: &str, metric: &str, benchmark: &BenchmarkRaw) -> Option<Row1d> {
+    let row_value = benchmark.data.get(row);
+    let metric_value = benchmark.data.get(metric);
+
+    match (row_value, metric_value) {
+        (Some(row_value), Some(metric_value)) => {
+            let row_value = format!("{}", row_value);
+            let metric_value = format!("{}", metric_value);
+
+            // add row to table
+            Some((row_value, metric_value))
+        }
+        _ => None,
+    }
+}
+
+pub fn show_1d_table(row: &str, metric: &str, filter: &HashMap<String, String>) -> Result<()> {
     let benchmarks = load_all_benchmarks()?;
 
-    let mut table = vec![];
-    let mut empty_matches = 0;
-
-    for benchmark in benchmarks.iter().filter(|b| apply_filter(b, filter)) {
-        let row_value = benchmark.data.get(&row);
-        let metric_value = benchmark.data.get(&metric);
-
-        match (row_value, metric_value) {
-            (Some(row_value), Some(metric_value)) => {
-                let row_value = format!("{}", row_value);
-                let metric_value = format!("{}", metric_value);
-
-                // add row to table
-                table.push(vec![
-                    row_value.cell(),
-                    metric_value.cell().justify(Justify::Right),
-                ]);
-            }
-            _ => empty_matches += 1,
-        }
-    }
+    let TableData1d {
+        rows,
+        empty_matches,
+    } = compute_table_data_1d(&benchmarks, row, metric, filter);
 
     println!("Showing 1-dimensional table with:");
     println!("row: {}, metric: {}\n", row, metric);
 
-    if table.is_empty() {
+    if rows.is_empty() {
         println!("Result is empty");
     } else {
-        // convert table to TableStruct and set title
-        let table = table
-            .table()
-            .title(vec![
-                row.clone().cell().bold(true),
-                metric.clone().cell().bold(true),
-            ])
-            .bold(true);
-        println!("{}", table.display()?);
+        println!("{}", build_1d_table(row, metric, &rows).display()?);
     }
 
     if empty_matches > 0 {
         println!(
-            "\"{}\" together with \"{}\" was {}x not present in your benchmarks",
-            row, metric, empty_matches
+            "\"{row}\" together with \"{metric}\" was {empty_matches}x not present in your benchmarks"
         );
     }
 
     Ok(())
 }
 
+struct TableData1d {
+    rows: Vec<Row1d>,
+    empty_matches: usize,
+}
+
+fn compute_table_data_1d(
+    benchmarks: &[BenchmarkRaw],
+    row: &str,
+    metric: &str,
+    filter: &HashMap<String, String>,
+) -> TableData1d {
+    let rows = benchmarks
+        .iter()
+        .filter(|benchmark| apply_filter(benchmark, filter))
+        .filter_map(|benchmark| benchmark_to_row(row, metric, benchmark))
+        .sorted_by(|(l, _), (r, _)| l.cmp(r))
+        .collect_vec();
+
+    let empty_matches = benchmarks.len() - rows.len();
+
+    TableData1d {
+        rows,
+        empty_matches,
+    }
+}
+
+fn build_1d_table(col1_title: &str, col2_title: &str, rows: &[Row1d]) -> TableStruct {
+    rows.iter()
+        .map(|(row, metric)| vec![row.cell(), metric.cell().justify(Justify::Right)])
+        .table()
+        .title(vec![
+            col1_title.to_string().cell().bold(true),
+            col2_title.to_string().cell().bold(true),
+        ])
+        .bold(true)
+}
+
 pub fn show_2d_table(
-    row: String,
-    col: String,
-    metric: String,
+    row: &str,
+    col: &str,
+    metric: &str,
     filter: &HashMap<String, String>,
 ) -> Result<()> {
     let benchmarks = load_all_benchmarks()?;
 
-    let mut matrix: HashMap<String, HashMap<String, Values>> = HashMap::new();
-    let mut table = vec![];
-    let mut table_header = vec!["".cell()];
+    let data = compute_2d_table_data(&benchmarks, row, col, metric, filter);
+
+    println!("Showing 2-dimensional table with:");
+    println!("row: {}, col: {}, metric: {}\n", row, col, metric);
+
+    if data.matrix.is_empty() {
+        println!("Result is empty");
+    } else {
+        println!("{}", build_2d_table(&data).display()?);
+    }
+
+    Ok(())
+}
+
+fn build_2d_table(data: &TableData2d) -> TableStruct {
+    data.matrix
+        .iter()
+        .sorted_by(|a, b| (*a).0.cmp((*b).0))
+        .map(|(row, col_to_metrics)| {
+            let mut table_row = vec![row.clone().cell()];
+            for _ in 1..data.table_headers.len() {
+                table_row.push("".cell());
+            }
+
+            for (col, metrics) in col_to_metrics.iter() {
+                // TODO: here we can aggregate 'metrics'
+                let metric_value = format!("{}", metrics);
+                table_row[data.col_to_pos[col]] = metric_value.cell();
+            }
+
+            table_row
+        })
+        .table()
+        .title(&data.table_headers)
+}
+
+struct TableData2d {
+    table_headers: Vec<String>,
+    col_to_pos: HashMap<String, usize>,
+    matrix: HashMap<String, HashMap<String, Values>>,
+}
+
+fn compute_2d_table_data(
+    benchmarks: &[BenchmarkRaw],
+    row: &str,
+    col: &str,
+    metric: &str,
+    filter: &HashMap<String, String>,
+) -> TableData2d {
+    let mut matrix = HashMap::new();
+    let mut table_headers = vec![String::from("")];
 
     let mut col_to_pos = HashMap::new();
     let mut pos = 1;
 
     for benchmark in benchmarks.iter().filter(|b| apply_filter(b, filter)) {
         if let (Some(row_value), Some(col_value), Some(metric_value)) = (
-            benchmark.data.get(&row),
-            benchmark.data.get(&col),
-            benchmark.data.get(&metric),
+            benchmark.data.get(row),
+            benchmark.data.get(col),
+            benchmark.data.get(metric),
         ) {
             let row_value = format!("{}", row_value);
             let col_value = format!("{}", col_value);
 
             if !col_to_pos.contains_key(&col_value) {
-                table_header.push(col_value.clone().cell().bold(true));
+                table_headers.push(col_value.clone()); //.cell().bold(true));
                 col_to_pos.insert(col_value.clone(), pos);
                 pos += 1;
             }
@@ -226,32 +305,11 @@ pub fn show_2d_table(
         }
     }
 
-    // build table
-    for (row, col_to_metrics) in matrix.iter() {
-        let mut table_row = vec![row.clone().cell()];
-        for _ in 1..table_header.len() {
-            table_row.push("".cell());
-        }
-
-        for (col, metrics) in col_to_metrics.iter() {
-            // TODO: here we can aggregate 'metrics'
-            let metric_value = format!("{}", metrics);
-            table_row[col_to_pos[col]] = metric_value.cell();
-        }
-        table.push(table_row);
+    TableData2d {
+        table_headers,
+        col_to_pos,
+        matrix,
     }
-
-    println!("Showing 2-dimensional table with:");
-    println!("row: {}, col: {}, metric: {}\n", row, col, metric);
-
-    if table.is_empty() {
-        println!("Result is empty");
-    } else {
-        let table = table.table().title(table_header);
-        println!("{}", table.display()?);
-    }
-
-    Ok(())
 }
 
 #[cfg(test)]
