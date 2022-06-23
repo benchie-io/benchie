@@ -52,4 +52,4 @@ runs:
           ~/.cargo/registry/index/
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
-        key: benchie-${{ hashFiles('**/Cargo.lock') }}
+        key: benchie-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}

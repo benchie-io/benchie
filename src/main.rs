@@ -19,8 +19,8 @@ fn main() -> Result<()> {
             metric,
             filter,
         } => match (row, col, metric) {
-            (Some(row), Some(col), Some(metric)) => show_2d_table(row, col, metric, &filter),
-            (Some(row), _, Some(metric)) => show_1d_table(row, metric, &filter),
+            (Some(row), Some(col), Some(metric)) => show_2d_table(&row, &col, &metric, &filter),
+            (Some(row), _, Some(metric)) => show_1d_table(&row, &metric, &filter),
             _ => show(&filter),
         },
     }

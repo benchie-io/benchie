@@ -6,7 +6,7 @@ const BASIC_COMMAND: &[&str] = &["sleep", "1"];
 const BASIC_COMMAND: &[&str] = &["timeout", "/t", "1"];
 
 #[test]
-fn test_execution_and_measurement_basic_functionality() {
+fn execution_and_measurement_basic_functionality() {
     let command: Vec<String> = BASIC_COMMAND.iter().map(|s| s.to_string()).collect();
     let result = execute_and_measure(&command);
 
@@ -33,7 +33,7 @@ fn test_execution_and_measurement_basic_functionality() {
 }
 
 #[test]
-fn test_should_not_panic_if_command_is_invalid() {
+fn should_not_panic_if_command_is_invalid() {
     let result = execute_and_measure(&["adsl;fasdjfoigaids;ifgorajoaidfjoigajoidaa".to_string()]);
 
     assert!(

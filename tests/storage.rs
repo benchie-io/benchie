@@ -1,7 +1,7 @@
 mod common;
 
-use crate::common::{build_git_repo, with_temp_dir};
 use benchie::{append_benchmark, load_all_benchmarks, Benchmark, ExecutionResult, GitInfo, Value};
+use common::{build_git_repo, with_temp_dir};
 use serial_test::serial;
 use std::collections::HashMap;
 use std::env::set_current_dir;
@@ -12,7 +12,7 @@ use std::time::Duration;
 
 #[test]
 #[serial]
-fn test_with_missing_dir() {
+fn dont_crash_with_missing_dir() {
     with_temp_dir(|temp_dir| {
         let data_file_path = temp_dir.path().join(".benchie/data.json");
         assert!(!data_file_path.exists());
@@ -40,7 +40,7 @@ fn test_with_missing_dir() {
 
 #[test]
 #[serial]
-fn test_with_existing_dir_but_missing_data() {
+fn dont_crash_with_existing_dir_but_missing_data() {
     with_temp_dir(|temp_dir| {
         let benchie_dir = temp_dir.path().join(".benchie");
         let data_file_path = benchie_dir.join("data.json");
@@ -73,7 +73,7 @@ fn test_with_existing_dir_but_missing_data() {
 
 #[test]
 #[serial]
-fn test_with_existing_dir_and_data() {
+fn append_data_with_existing_dir_and_data() {
     with_temp_dir(|temp_dir| {
         let benchie_dir = temp_dir.path().join(".benchie");
         let data_file_path = benchie_dir.join("data.json");

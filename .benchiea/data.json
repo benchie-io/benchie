@@ -1,0 +1,932 @@
+{
+  "schema": 1,
+  "benchmarks": [
+    {
+      "command": {
+        "type": "String",
+        "value": "ls"
+      },
+      "created_at": {
+        "type": "Timestamp",
+        "value": "2022-05-14T20:30:09.482904Z"
+      },
+      "commit_id": {
+        "type": "String",
+        "value": "68eb6afe20239352f5457c0577b797530c1f6ab2"
+      },
+      "commit_message": {
+        "type": "String",
+        "value": "remove dead code"
+      },
+      "branch": {
+        "type": "String",
+        "value": "fix-git-info-without-head"
+      },
+      "is_dirty": {
+        "type": "Bool",
+        "value": false
+      },
+      "total_memory": {
+        "type": "ByteSize",
+        "value": 17179869000
+      },
+      "used_memory": {
+        "type": "ByteSize",
+        "value": 17013245000
+      },
+      "total_swap": {
+        "type": "ByteSize",
+        "value": 2147483000
+      },
+      "used_swap": {
+        "type": "ByteSize",
+        "value": 765460000
+      },
+      "cores": {
+        "type": "Integer",
+        "value": 8
+      },
+      "os": {
+        "type": "String",
+        "value": "macos"
+      },
+      "os_family": {
+        "type": "String",
+        "value": "unix"
+      },
+      "os_version": {
+        "type": "String",
+        "value": "12.3.1"
+      },
+      "kernel_version": {
+        "type": "String",
+        "value": "21.4.0"
+      },
+      "arch": {
+        "type": "String",
+        "value": "aarch64"
+      },
+      "benchie_version": {
+        "type": "String",
+        "value": "0.3.0"
+      },
+      "user_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 287000
+        }
+      },
+      "system_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 633000
+        }
+      },
+      "real_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 2831041
+        }
+      },
+      "status_code": {
+        "type": "Integer",
+        "value": 0
+      },
+      "algorithm": {
+        "type": "String",
+        "value": "bubblesort"
+      },
+      "elements": {
+        "type": "String",
+        "value": "10"
+      }
+    },
+    {
+      "command": {
+        "type": "String",
+        "value": "ls"
+      },
+      "created_at": {
+        "type": "Timestamp",
+        "value": "2022-05-14T20:30:10.734124Z"
+      },
+      "commit_id": {
+        "type": "String",
+        "value": "68eb6afe20239352f5457c0577b797530c1f6ab2"
+      },
+      "commit_message": {
+        "type": "String",
+        "value": "remove dead code"
+      },
+      "branch": {
+        "type": "String",
+        "value": "fix-git-info-without-head"
+      },
+      "is_dirty": {
+        "type": "Bool",
+        "value": false
+      },
+      "total_memory": {
+        "type": "ByteSize",
+        "value": 17179869000
+      },
+      "used_memory": {
+        "type": "ByteSize",
+        "value": 17013789000
+      },
+      "total_swap": {
+        "type": "ByteSize",
+        "value": 2147483000
+      },
+      "used_swap": {
+        "type": "ByteSize",
+        "value": 765460000
+      },
+      "cores": {
+        "type": "Integer",
+        "value": 8
+      },
+      "os": {
+        "type": "String",
+        "value": "macos"
+      },
+      "os_family": {
+        "type": "String",
+        "value": "unix"
+      },
+      "os_version": {
+        "type": "String",
+        "value": "12.3.1"
+      },
+      "kernel_version": {
+        "type": "String",
+        "value": "21.4.0"
+      },
+      "arch": {
+        "type": "String",
+        "value": "aarch64"
+      },
+      "benchie_version": {
+        "type": "String",
+        "value": "0.3.0"
+      },
+      "user_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 383000
+        }
+      },
+      "system_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 774000
+        }
+      },
+      "real_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 2162333
+        }
+      },
+      "status_code": {
+        "type": "Integer",
+        "value": 0
+      },
+      "elements": {
+        "type": "String",
+        "value": "10"
+      },
+      "algorithm": {
+        "type": "String",
+        "value": "bubblesort"
+      }
+    },
+    {
+      "command": {
+        "type": "String",
+        "value": "ls"
+      },
+      "created_at": {
+        "type": "Timestamp",
+        "value": "2022-05-14T20:30:13.903375Z"
+      },
+      "commit_id": {
+        "type": "String",
+        "value": "68eb6afe20239352f5457c0577b797530c1f6ab2"
+      },
+      "commit_message": {
+        "type": "String",
+        "value": "remove dead code"
+      },
+      "branch": {
+        "type": "String",
+        "value": "fix-git-info-without-head"
+      },
+      "is_dirty": {
+        "type": "Bool",
+        "value": false
+      },
+      "total_memory": {
+        "type": "ByteSize",
+        "value": 17179869000
+      },
+      "used_memory": {
+        "type": "ByteSize",
+        "value": 17006109000
+      },
+      "total_swap": {
+        "type": "ByteSize",
+        "value": 2147483000
+      },
+      "used_swap": {
+        "type": "ByteSize",
+        "value": 765460000
+      },
+      "cores": {
+        "type": "Integer",
+        "value": 8
+      },
+      "os": {
+        "type": "String",
+        "value": "macos"
+      },
+      "os_family": {
+        "type": "String",
+        "value": "unix"
+      },
+      "os_version": {
+        "type": "String",
+        "value": "12.3.1"
+      },
+      "kernel_version": {
+        "type": "String",
+        "value": "21.4.0"
+      },
+      "arch": {
+        "type": "String",
+        "value": "aarch64"
+      },
+      "benchie_version": {
+        "type": "String",
+        "value": "0.3.0"
+      },
+      "user_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 376000
+        }
+      },
+      "system_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 779000
+        }
+      },
+      "real_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 2007625
+        }
+      },
+      "status_code": {
+        "type": "Integer",
+        "value": 0
+      },
+      "elements": {
+        "type": "String",
+        "value": "100"
+      },
+      "algorithm": {
+        "type": "String",
+        "value": "bubblesort"
+      }
+    },
+    {
+      "command": {
+        "type": "String",
+        "value": "ls"
+      },
+      "created_at": {
+        "type": "Timestamp",
+        "value": "2022-05-14T20:30:15.148232Z"
+      },
+      "commit_id": {
+        "type": "String",
+        "value": "68eb6afe20239352f5457c0577b797530c1f6ab2"
+      },
+      "commit_message": {
+        "type": "String",
+        "value": "remove dead code"
+      },
+      "branch": {
+        "type": "String",
+        "value": "fix-git-info-without-head"
+      },
+      "is_dirty": {
+        "type": "Bool",
+        "value": false
+      },
+      "total_memory": {
+        "type": "ByteSize",
+        "value": 17179869000
+      },
+      "used_memory": {
+        "type": "ByteSize",
+        "value": 16987853000
+      },
+      "total_swap": {
+        "type": "ByteSize",
+        "value": 2147483000
+      },
+      "used_swap": {
+        "type": "ByteSize",
+        "value": 765460000
+      },
+      "cores": {
+        "type": "Integer",
+        "value": 8
+      },
+      "os": {
+        "type": "String",
+        "value": "macos"
+      },
+      "os_family": {
+        "type": "String",
+        "value": "unix"
+      },
+      "os_version": {
+        "type": "String",
+        "value": "12.3.1"
+      },
+      "kernel_version": {
+        "type": "String",
+        "value": "21.4.0"
+      },
+      "arch": {
+        "type": "String",
+        "value": "aarch64"
+      },
+      "benchie_version": {
+        "type": "String",
+        "value": "0.3.0"
+      },
+      "user_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 338000
+        }
+      },
+      "system_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 664000
+        }
+      },
+      "real_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 1755000
+        }
+      },
+      "status_code": {
+        "type": "Integer",
+        "value": 0
+      },
+      "elements": {
+        "type": "String",
+        "value": "100"
+      },
+      "algorithm": {
+        "type": "String",
+        "value": "bubblesort"
+      }
+    },
+    {
+      "command": {
+        "type": "String",
+        "value": "ls"
+      },
+      "created_at": {
+        "type": "Timestamp",
+        "value": "2022-05-14T20:30:23.651446Z"
+      },
+      "commit_id": {
+        "type": "String",
+        "value": "68eb6afe20239352f5457c0577b797530c1f6ab2"
+      },
+      "commit_message": {
+        "type": "String",
+        "value": "remove dead code"
+      },
+      "branch": {
+        "type": "String",
+        "value": "fix-git-info-without-head"
+      },
+      "is_dirty": {
+        "type": "Bool",
+        "value": false
+      },
+      "total_memory": {
+        "type": "ByteSize",
+        "value": 17179869000
+      },
+      "used_memory": {
+        "type": "ByteSize",
+        "value": 16978381000
+      },
+      "total_swap": {
+        "type": "ByteSize",
+        "value": 2147483000
+      },
+      "used_swap": {
+        "type": "ByteSize",
+        "value": 765460000
+      },
+      "cores": {
+        "type": "Integer",
+        "value": 8
+      },
+      "os": {
+        "type": "String",
+        "value": "macos"
+      },
+      "os_family": {
+        "type": "String",
+        "value": "unix"
+      },
+      "os_version": {
+        "type": "String",
+        "value": "12.3.1"
+      },
+      "kernel_version": {
+        "type": "String",
+        "value": "21.4.0"
+      },
+      "arch": {
+        "type": "String",
+        "value": "aarch64"
+      },
+      "benchie_version": {
+        "type": "String",
+        "value": "0.3.0"
+      },
+      "user_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 328000
+        }
+      },
+      "system_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 583000
+        }
+      },
+      "real_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 1531333
+        }
+      },
+      "status_code": {
+        "type": "Integer",
+        "value": 0
+      },
+      "algorithm": {
+        "type": "String",
+        "value": "mergesort"
+      },
+      "elements": {
+        "type": "String",
+        "value": "100"
+      }
+    },
+    {
+      "command": {
+        "type": "String",
+        "value": "ls"
+      },
+      "created_at": {
+        "type": "Timestamp",
+        "value": "2022-05-14T20:30:24.627701Z"
+      },
+      "commit_id": {
+        "type": "String",
+        "value": "68eb6afe20239352f5457c0577b797530c1f6ab2"
+      },
+      "commit_message": {
+        "type": "String",
+        "value": "remove dead code"
+      },
+      "branch": {
+        "type": "String",
+        "value": "fix-git-info-without-head"
+      },
+      "is_dirty": {
+        "type": "Bool",
+        "value": false
+      },
+      "total_memory": {
+        "type": "ByteSize",
+        "value": 17179869000
+      },
+      "used_memory": {
+        "type": "ByteSize",
+        "value": 16959677000
+      },
+      "total_swap": {
+        "type": "ByteSize",
+        "value": 2147483000
+      },
+      "used_swap": {
+        "type": "ByteSize",
+        "value": 765460000
+      },
+      "cores": {
+        "type": "Integer",
+        "value": 8
+      },
+      "os": {
+        "type": "String",
+        "value": "macos"
+      },
+      "os_family": {
+        "type": "String",
+        "value": "unix"
+      },
+      "os_version": {
+        "type": "String",
+        "value": "12.3.1"
+      },
+      "kernel_version": {
+        "type": "String",
+        "value": "21.4.0"
+      },
+      "arch": {
+        "type": "String",
+        "value": "aarch64"
+      },
+      "benchie_version": {
+        "type": "String",
+        "value": "0.3.0"
+      },
+      "user_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 320000
+        }
+      },
+      "system_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 573000
+        }
+      },
+      "real_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 1735208
+        }
+      },
+      "status_code": {
+        "type": "Integer",
+        "value": 0
+      },
+      "algorithm": {
+        "type": "String",
+        "value": "mergesort"
+      },
+      "elements": {
+        "type": "String",
+        "value": "100"
+      }
+    },
+    {
+      "command": {
+        "type": "String",
+        "value": "ls"
+      },
+      "created_at": {
+        "type": "Timestamp",
+        "value": "2022-05-14T20:30:26.774221Z"
+      },
+      "commit_id": {
+        "type": "String",
+        "value": "68eb6afe20239352f5457c0577b797530c1f6ab2"
+      },
+      "commit_message": {
+        "type": "String",
+        "value": "remove dead code"
+      },
+      "branch": {
+        "type": "String",
+        "value": "fix-git-info-without-head"
+      },
+      "is_dirty": {
+        "type": "Bool",
+        "value": false
+      },
+      "total_memory": {
+        "type": "ByteSize",
+        "value": 17179869000
+      },
+      "used_memory": {
+        "type": "ByteSize",
+        "value": 16962541000
+      },
+      "total_swap": {
+        "type": "ByteSize",
+        "value": 2147483000
+      },
+      "used_swap": {
+        "type": "ByteSize",
+        "value": 765460000
+      },
+      "cores": {
+        "type": "Integer",
+        "value": 8
+      },
+      "os": {
+        "type": "String",
+        "value": "macos"
+      },
+      "os_family": {
+        "type": "String",
+        "value": "unix"
+      },
+      "os_version": {
+        "type": "String",
+        "value": "12.3.1"
+      },
+      "kernel_version": {
+        "type": "String",
+        "value": "21.4.0"
+      },
+      "arch": {
+        "type": "String",
+        "value": "aarch64"
+      },
+      "benchie_version": {
+        "type": "String",
+        "value": "0.3.0"
+      },
+      "user_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 362000
+        }
+      },
+      "system_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 676000
+        }
+      },
+      "real_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 1907833
+        }
+      },
+      "status_code": {
+        "type": "Integer",
+        "value": 0
+      },
+      "algorithm": {
+        "type": "String",
+        "value": "mergesort"
+      },
+      "elements": {
+        "type": "String",
+        "value": "10"
+      }
+    },
+    {
+      "command": {
+        "type": "String",
+        "value": "ls"
+      },
+      "created_at": {
+        "type": "Timestamp",
+        "value": "2022-05-14T20:30:27.649552Z"
+      },
+      "commit_id": {
+        "type": "String",
+        "value": "68eb6afe20239352f5457c0577b797530c1f6ab2"
+      },
+      "commit_message": {
+        "type": "String",
+        "value": "remove dead code"
+      },
+      "branch": {
+        "type": "String",
+        "value": "fix-git-info-without-head"
+      },
+      "is_dirty": {
+        "type": "Bool",
+        "value": false
+      },
+      "total_memory": {
+        "type": "ByteSize",
+        "value": 17179869000
+      },
+      "used_memory": {
+        "type": "ByteSize",
+        "value": 16966621000
+      },
+      "total_swap": {
+        "type": "ByteSize",
+        "value": 2147483000
+      },
+      "used_swap": {
+        "type": "ByteSize",
+        "value": 765460000
+      },
+      "cores": {
+        "type": "Integer",
+        "value": 8
+      },
+      "os": {
+        "type": "String",
+        "value": "macos"
+      },
+      "os_family": {
+        "type": "String",
+        "value": "unix"
+      },
+      "os_version": {
+        "type": "String",
+        "value": "12.3.1"
+      },
+      "kernel_version": {
+        "type": "String",
+        "value": "21.4.0"
+      },
+      "arch": {
+        "type": "String",
+        "value": "aarch64"
+      },
+      "benchie_version": {
+        "type": "String",
+        "value": "0.3.0"
+      },
+      "user_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 390000
+        }
+      },
+      "system_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 706000
+        }
+      },
+      "real_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 1737000
+        }
+      },
+      "status_code": {
+        "type": "Integer",
+        "value": 0
+      },
+      "elements": {
+        "type": "String",
+        "value": "10"
+      },
+      "algorithm": {
+        "type": "String",
+        "value": "mergesort"
+      }
+    },
+    {
+      "command": {
+        "type": "String",
+        "value": "ls"
+      },
+      "created_at": {
+        "type": "Timestamp",
+        "value": "2022-05-14T20:30:32.032275Z"
+      },
+      "commit_id": {
+        "type": "String",
+        "value": "68eb6afe20239352f5457c0577b797530c1f6ab2"
+      },
+      "commit_message": {
+        "type": "String",
+        "value": "remove dead code"
+      },
+      "branch": {
+        "type": "String",
+        "value": "fix-git-info-without-head"
+      },
+      "is_dirty": {
+        "type": "Bool",
+        "value": false
+      },
+      "total_memory": {
+        "type": "ByteSize",
+        "value": 17179869000
+      },
+      "used_memory": {
+        "type": "ByteSize",
+        "value": 17029965000
+      },
+      "total_swap": {
+        "type": "ByteSize",
+        "value": 2147483000
+      },
+      "used_swap": {
+        "type": "ByteSize",
+        "value": 765460000
+      },
+      "cores": {
+        "type": "Integer",
+        "value": 8
+      },
+      "os": {
+        "type": "String",
+        "value": "macos"
+      },
+      "os_family": {
+        "type": "String",
+        "value": "unix"
+      },
+      "os_version": {
+        "type": "String",
+        "value": "12.3.1"
+      },
+      "kernel_version": {
+        "type": "String",
+        "value": "21.4.0"
+      },
+      "arch": {
+        "type": "String",
+        "value": "aarch64"
+      },
+      "benchie_version": {
+        "type": "String",
+        "value": "0.3.0"
+      },
+      "user_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 365000
+        }
+      },
+      "system_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 725000
+        }
+      },
+      "real_time": {
+        "type": "Duration",
+        "value": {
+          "secs": 0,
+          "nanos": 1867041
+        }
+      },
+      "status_code": {
+        "type": "Integer",
+        "value": 0
+      },
+      "elements": {
+        "type": "String",
+        "value": "1000"
+      },
+      "algorithm": {
+        "type": "String",
+        "value": "mergesort"
+      }
+    }
+  ]
+}
