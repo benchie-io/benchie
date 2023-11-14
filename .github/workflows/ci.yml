@@ -1,7 +1,7 @@
 name: CI
 
 on:
-#  push:
+  push:
 #  schedule:
 #    # trigger weekly at 12am
 #    # this build should run with caches disabled
@@ -13,40 +13,20 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  ci:
+  test:
     name: Build and Test
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: ./.github/actions/setup-rust/
+      - name: Install Rust Toolchain
+        uses: ./.github/actions/setup-rust/
         with:
           cache: true
-
-      - name: Check Format
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: -- --check
-
-      - name: Clippy on Linux
-        if: ${{ contains(matrix.os, 'ubuntu') }}
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-targets -- -D warnings
-          name: Clippy
-
-      - name: Clippy on operating systems
-        if: ${{ !contains(matrix.os, 'ubuntu') }}
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --all-targets -- -D warnings
 
       - name: Build
         uses: actions-rs/cargo@v1
@@ -95,9 +75,47 @@ jobs:
           | cargo llvm-codecov-converter > target/debug/coverage/report.txt
 
       - uses: codecov/codecov-action@v3
+        if: contains(matrix.os, 'ubuntu')
         with:
           files: target/debug/coverage/report.txt
           verbose: true
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust Toolchain
+        uses: ./.github/actions/setup-rust/
+        with:
+          cache: true
+
+      - name: Clippy on Linux
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-targets -- -D warnings
+          name: Clippy
+
+  format:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust Toolchain
+        uses: ./.github/actions/setup-rust/
+        with:
+          cache: true
+
+      - name: Check Format
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: -- --check
 
   security-scan:
     name: Security Scan of Dependencies
