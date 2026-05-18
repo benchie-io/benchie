@@ -52,7 +52,7 @@ $ cargo install benchie --locked
 
 #### Install via Github
 * Clone this repository
-* Test you toolchain setup by compiling benchie:
+* Test your toolchain setup by compiling benchie:
   ```bash
   $ cargo build --locked
   ```
@@ -66,13 +66,13 @@ $ cargo install benchie --locked
 
 ### Benchmark
 
-In order to benchmark (measure runtime similar to the unix-tool `time`) a process, invocate benchie as follows:
+To benchmark a process and measure its runtime, similar to the Unix tool `time`, invoke benchie as follows:
 ```bash
 $ benchie [OPTIONS] <COMMAND>
 ```
 where `<COMMAND>` can be any command including command-line arguments.
-benchie stores additionally some meta information to the benchmark such as information of the commit, timestamps, exit status of the executable, etc.
-Moreover, one can pass various options to the benchmarking process.
+benchie also stores metadata for each benchmark, such as commit information, timestamps, and the executable's exit status.
+You can pass additional options to customize the benchmarking process.
 
 #### Tagging
 
@@ -140,7 +140,7 @@ which may give the following output:
 +------------+-----------+
 ```
 
-For the two-dimensional table view, we need also to pass the `--col` option, which again must be an occuring key.
+For the two-dimensional table view, also pass the `--col` option, which again must be an occurring key.
 Let's assume we made 4 benchmarks: 2 for bubblesort and 2 for mergesort with 100 and 1000 elements, respectively.
 Hence, we tagged each benchmark with two tags: `algorithm=bubblesort` and `elements=100`, etc.
 To show a two-dimensional table view on `algorithm` and `elements` with `user_time` as metric, we can type
